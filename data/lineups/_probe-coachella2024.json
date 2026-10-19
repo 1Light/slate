@@ -1,0 +1,154 @@
+{
+  "name": "Coachella 2024 — probe",
+  "short": "Coachella 2024",
+  "order": 99,
+  "entity_type": "urn:entity:artist",
+  "films": [
+    {
+      "title": "Lana Del Rey",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Tyler, the Creator",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": [
+        "Tyler The Creator"
+      ]
+    },
+    {
+      "title": "Doja Cat",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "No Doubt",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Blur",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Deftones",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Justice",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Grimes",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Lil Uzi Vert",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Peso Pluma",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "J Balvin",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Sabrina Carpenter",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Ice Spice",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Jhené Aiko",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": [
+        "Jhene Aiko"
+      ]
+    },
+    {
+      "title": "Khruangbin",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Jungle",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Faye Webster",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Victoria Monét",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": [
+        "Victoria Monet"
+      ]
+    },
+    {
+      "title": "Sublime",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Bizarrap",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    }
+  ]
+}

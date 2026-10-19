@@ -1,0 +1,150 @@
+{
+  "name": "A prestige drama slate",
+  "short": "Television",
+  "order": 99,
+  "entity_type": "urn:entity:tv_show",
+  "films": [
+    {
+      "title": "Succession",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "The Last of Us",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "The White Lotus",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Barry",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Euphoria",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "House of the Dragon",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Industry",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "The Righteous Gemstones",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Hacks",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Somebody Somewhere",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Winning Time",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": [
+        "Winning Time: The Rise of the Lakers Dynasty"
+      ]
+    },
+    {
+      "title": "Perry Mason",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "The Wire",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "The Sopranos",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Deadwood",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Six Feet Under",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Veep",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Curb Your Enthusiasm",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Big Little Lies",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Mare of Easttown",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    }
+  ]
+}

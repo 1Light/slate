@@ -1,0 +1,114 @@
+{
+  "movielens": {
+    "lineup": "one-genre",
+    "lineup_name": "One genre — a science fiction season",
+    "rho": -0.498,
+    "pairs": 55,
+    "ratings": 95537,
+    "users": 55696,
+    "matched": 11,
+    "of": 12,
+    "unmatched": [
+      "Solaris"
+    ],
+    "source": "MovieLens 32M, GroupLens Research, University of Minnesota",
+    "reproduce": "python3 scripts/probe_movielens.py one-genre",
+    "closest": [
+      {
+        "a": "Annihilation",
+        "b": "Blade Runner 2049",
+        "distance": 1.0,
+        "r": 0.35,
+        "n": 3445
+      },
+      {
+        "a": "Melancholia",
+        "b": "The Fountain",
+        "distance": 1.0,
+        "r": 0.34,
+        "n": 1305
+      },
+      {
+        "a": "Under the Skin",
+        "b": "Upstream Color",
+        "distance": 1.0,
+        "r": 0.43,
+        "n": 573
+      },
+      {
+        "a": "2001: A Space Odyssey",
+        "b": "Stalker",
+        "distance": 1.5,
+        "r": 0.35,
+        "n": 2867
+      }
+    ],
+    "furthest": [
+      {
+        "a": "Annihilation",
+        "b": "Stalker",
+        "distance": 10.5,
+        "r": 0.25,
+        "n": 777
+      },
+      {
+        "a": "Arrival",
+        "b": "High Life",
+        "distance": 10.5,
+        "r": 0.1,
+        "n": 385
+      },
+      {
+        "a": "2001: A Space Odyssey",
+        "b": "High Life",
+        "distance": 11.0,
+        "r": 0.34,
+        "n": 337
+      },
+      {
+        "a": "Blade Runner 2049",
+        "b": "Melancholia",
+        "distance": 11.0,
+        "r": 0.21,
+        "n": 1443
+      }
+    ],
+    "headline": "Annihilation and Stalker are the two films a genre tag would call identical, and the two Qloo puts furthest apart. The 777 people who rated both agree.",
+    "limit": "Rating agreement is not festival attendance. No public dataset records which people attended which screenings, so this tests whether the taste signal tracks observed preference, not whether two films share a room.",
+    "baselines": [
+      {
+        "name": "Qloo distance",
+        "rho": -0.498,
+        "what": "cultural affinity"
+      },
+      {
+        "name": "Genre overlap",
+        "rho": 0.038,
+        "what": "Jaccard on MovieLens labels"
+      },
+      {
+        "name": "Year apart",
+        "rho": -0.139,
+        "what": "release dates"
+      },
+      {
+        "name": "Fame gap",
+        "rho": 0.06,
+        "what": "difference in Qloo popularity"
+      }
+    ],
+    "baseline_verdict": "Every film in this set carries the Sci-Fi tag, and the tag predicts nothing: +0.038 against Qloo's -0.498. Release year carries a little signal at -0.139. Popularity none. Cultural affinity is thirteen times the strongest predictor of whether two films' viewers agree.",
+    "baseline_reproduce": "python3 scripts/probe_baseline.py one-genre"
+  },
+  "entity_probe": {
+    "entity_type": "urn:entity:artist",
+    "lineup": "Coachella 2024, 20 acts",
+    "resolution": 1.0,
+    "completeness": 1.0,
+    "silhouette": 0.576,
+    "plateau_width": 0.02,
+    "film_plateau_width": 0.1,
+    "verdict": "Artists resolve better than films and separate more sharply, but the cutoff holds only within ±0.01 against film's ±0.05. One lineup cannot justify a cutoff that fragile, so Slate stays with one entity type.",
+    "reproduce": "python3 scripts/probe_entity.py _probe-coachella2024"
+  }
+}

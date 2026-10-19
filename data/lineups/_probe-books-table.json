@@ -1,0 +1,94 @@
+{
+  "name": "A bookshop front table — probe",
+  "short": "Front table",
+  "order": 99,
+  "entity_type": "urn:entity:book",
+  "films": [
+    {
+      "title": "Normal People",
+      "year": 2018,
+      "director": "Sally Rooney",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Beloved",
+      "year": 1987,
+      "director": "Toni Morrison",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "The Road",
+      "year": 2006,
+      "director": "Cormac McCarthy",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Never Let Me Go",
+      "year": 2005,
+      "director": "Kazuo Ishiguro",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "The Secret History",
+      "year": 1992,
+      "director": "Donna Tartt",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Gone Girl",
+      "year": 2012,
+      "director": "Gillian Flynn",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Sapiens",
+      "year": 2011,
+      "director": "Yuval Noah Harari",
+      "origin": "",
+      "aliases": [
+        "Sapiens: A Brief History of Humankind"
+      ]
+    },
+    {
+      "title": "The Handmaid's Tale",
+      "year": 1985,
+      "director": "Margaret Atwood",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "A Little Life",
+      "year": 2015,
+      "director": "Hanya Yanagihara",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Educated",
+      "year": 2018,
+      "director": "Tara Westover",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Klara and the Sun",
+      "year": 2021,
+      "director": "Kazuo Ishiguro",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Circe",
+      "year": 2018,
+      "director": "Madeline Miller",
+      "origin": "",
+      "aliases": []
+    }
+  ]
+}

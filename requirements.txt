@@ -1,0 +1,10 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+requests>=2.31
+python-dotenv>=1.0
+pytest>=8.0
+
+# Python 3.9 cannot evaluate `str | None` at runtime, which Pydantic needs to
+# build its models. macOS still ships 3.9 as `python3`, so a venv made with the
+# system interpreter fails at import without this. Harmless on 3.10+.
+eval_type_backport>=0.2; python_version < "3.10"

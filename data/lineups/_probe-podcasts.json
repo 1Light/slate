@@ -1,0 +1,96 @@
+{
+  "name": "A public-radio podcast slate — probe",
+  "short": "Podcast slate",
+  "order": 99,
+  "entity_type": "urn:entity:podcast",
+  "films": [
+    {
+      "title": "Serial",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "This American Life",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Radiolab",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "99% Invisible",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": [
+        "99 Percent Invisible"
+      ]
+    },
+    {
+      "title": "Planet Money",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Reply All",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "The Daily",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Hardcore History",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": [
+        "Dan Carlin's Hardcore History"
+      ]
+    },
+    {
+      "title": "Song Exploder",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Criminal",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Invisibilia",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    },
+    {
+      "title": "Freakonomics Radio",
+      "year": 0,
+      "director": "",
+      "origin": "",
+      "aliases": []
+    }
+  ]
+}

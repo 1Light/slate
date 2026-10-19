@@ -1,0 +1,94 @@
+{
+  "name": "One genre — a science fiction season",
+  "short": "One genre",
+  "order": 4,
+  "entity_type": "urn:entity:movie",
+  "films": [
+    {
+      "title": "2001: A Space Odyssey",
+      "year": 1968,
+      "director": "Stanley Kubrick",
+      "origin": "United States",
+      "aliases": []
+    },
+    {
+      "title": "Solaris",
+      "year": 1972,
+      "director": "Andrei Tarkovsky",
+      "origin": "Russia",
+      "aliases": [
+        "Solyaris"
+      ]
+    },
+    {
+      "title": "Stalker",
+      "year": 1979,
+      "director": "Andrei Tarkovsky",
+      "origin": "Russia",
+      "aliases": []
+    },
+    {
+      "title": "Primer",
+      "year": 2004,
+      "director": "Shane Carruth",
+      "origin": "United States",
+      "aliases": []
+    },
+    {
+      "title": "The Fountain",
+      "year": 2006,
+      "director": "Darren Aronofsky",
+      "origin": "United States",
+      "aliases": []
+    },
+    {
+      "title": "Melancholia",
+      "year": 2011,
+      "director": "Lars von Trier",
+      "origin": "Denmark",
+      "aliases": []
+    },
+    {
+      "title": "Upstream Color",
+      "year": 2013,
+      "director": "Shane Carruth",
+      "origin": "United States",
+      "aliases": []
+    },
+    {
+      "title": "Under the Skin",
+      "year": 2013,
+      "director": "Jonathan Glazer",
+      "origin": "United Kingdom",
+      "aliases": []
+    },
+    {
+      "title": "Arrival",
+      "year": 2016,
+      "director": "Denis Villeneuve",
+      "origin": "Canada",
+      "aliases": []
+    },
+    {
+      "title": "Blade Runner 2049",
+      "year": 2017,
+      "director": "Denis Villeneuve",
+      "origin": "Canada",
+      "aliases": []
+    },
+    {
+      "title": "Annihilation",
+      "year": 2018,
+      "director": "Alex Garland",
+      "origin": "United Kingdom",
+      "aliases": []
+    },
+    {
+      "title": "High Life",
+      "year": 2018,
+      "director": "Claire Denis",
+      "origin": "France",
+      "aliases": []
+    }
+  ]
+}

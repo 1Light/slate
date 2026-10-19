@@ -1,0 +1,187 @@
+{
+  "name": "Cannes 2023 — Competition",
+  "entity_type": "urn:entity:movie",
+  "films": [
+    {
+      "title": "Club Zero",
+      "year": 2023,
+      "director": "Jessica Hausner",
+      "aliases": [],
+      "origin": "Austria"
+    },
+    {
+      "title": "The Zone of Interest",
+      "year": 2023,
+      "director": "Jonathan Glazer",
+      "aliases": [],
+      "origin": "United Kingdom"
+    },
+    {
+      "title": "Fallen Leaves",
+      "year": 2023,
+      "director": "Aki Kaurismäki",
+      "aliases": [
+        "Kuolleet lehdet"
+      ],
+      "origin": "Finland"
+    },
+    {
+      "title": "Four Daughters",
+      "year": 2023,
+      "director": "Kaouther Ben Hania",
+      "aliases": [
+        "Les Filles d'Olfa"
+      ],
+      "origin": "Tunisia"
+    },
+    {
+      "title": "Asteroid City",
+      "year": 2023,
+      "director": "Wes Anderson",
+      "aliases": [],
+      "origin": "United States"
+    },
+    {
+      "title": "Anatomy of a Fall",
+      "year": 2023,
+      "director": "Justine Triet",
+      "aliases": [
+        "Anatomie d'une chute"
+      ],
+      "origin": "France"
+    },
+    {
+      "title": "Monster",
+      "year": 2023,
+      "director": "Hirokazu Kore-eda",
+      "aliases": [
+        "Kaibutsu"
+      ],
+      "origin": "Japan"
+    },
+    {
+      "title": "A Brighter Tomorrow",
+      "year": 2023,
+      "director": "Nanni Moretti",
+      "aliases": [
+        "Il sol dell'avvenire"
+      ],
+      "origin": "Italy"
+    },
+    {
+      "title": "Last Summer",
+      "year": 2023,
+      "director": "Catherine Breillat",
+      "aliases": [
+        "L'été dernier"
+      ],
+      "origin": "France"
+    },
+    {
+      "title": "About Dry Grasses",
+      "year": 2023,
+      "director": "Nuri Bilge Ceylan",
+      "aliases": [
+        "Kuru Otlar Üstüne"
+      ],
+      "origin": "Turkey"
+    },
+    {
+      "title": "La Chimera",
+      "year": 2023,
+      "director": "Alice Rohrwacher",
+      "aliases": [
+        "The Chimera"
+      ],
+      "origin": "Italy"
+    },
+    {
+      "title": "The Taste of Things",
+      "year": 2023,
+      "director": "Tran Anh Hung",
+      "aliases": [
+        "The Pot-au-Feu",
+        "La Passion de Dodin Bouffant"
+      ],
+      "origin": "Vietnam"
+    },
+    {
+      "title": "Kidnapped",
+      "year": 2023,
+      "director": "Marco Bellocchio",
+      "aliases": [
+        "Rapito",
+        "Kidnapped: The Abduction of Edgardo Mortara"
+      ],
+      "origin": "Italy"
+    },
+    {
+      "title": "May December",
+      "year": 2023,
+      "director": "Todd Haynes",
+      "aliases": [],
+      "origin": "United States"
+    },
+    {
+      "title": "Youth",
+      "year": 2023,
+      "director": "Wang Bing",
+      "aliases": [
+        "Youth (Spring)",
+        "Qing Chun"
+      ],
+      "origin": "China"
+    },
+    {
+      "title": "The Old Oak",
+      "year": 2023,
+      "director": "Ken Loach",
+      "aliases": [],
+      "origin": "United Kingdom"
+    },
+    {
+      "title": "Banel & Adama",
+      "year": 2023,
+      "director": "Ramata-Toulaye Sy",
+      "aliases": [
+        "Banel e Adama"
+      ],
+      "origin": "Senegal"
+    },
+    {
+      "title": "Perfect Days",
+      "year": 2023,
+      "director": "Wim Wenders",
+      "aliases": [],
+      "origin": "Germany"
+    },
+    {
+      "title": "Firebrand",
+      "year": 2023,
+      "director": "Karim Aïnouz",
+      "aliases": [
+        "Le Jeu de la Reine"
+      ],
+      "origin": "Brazil"
+    },
+    {
+      "title": "Black Flies",
+      "year": 2023,
+      "director": "Jean-Stéphane Sauvaire",
+      "aliases": [
+        "Asphalt City"
+      ],
+      "origin": "France"
+    },
+    {
+      "title": "Homecoming",
+      "year": 2023,
+      "director": "Catherine Corsini",
+      "aliases": [
+        "Le Retour"
+      ],
+      "origin": "France"
+    }
+  ],
+  "order": 2
+}

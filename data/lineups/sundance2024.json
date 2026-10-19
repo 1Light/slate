@@ -1,0 +1,79 @@
+{
+  "name": "Sundance 2024 — U.S. Dramatic Competition",
+  "entity_type": "urn:entity:movie",
+  "films": [
+    {
+      "title": "Between the Temples",
+      "year": 2024,
+      "director": "Nathan Silver",
+      "aliases": [],
+      "origin": "United States"
+    },
+    {
+      "title": "Didi",
+      "year": 2024,
+      "director": "Sean Wang",
+      "aliases": [
+        "Dìdi"
+      ],
+      "origin": "United States"
+    },
+    {
+      "title": "Exhibiting Forgiveness",
+      "year": 2024,
+      "director": "Titus Kaphar",
+      "aliases": [],
+      "origin": "United States"
+    },
+    {
+      "title": "Good One",
+      "year": 2024,
+      "director": "India Donaldson",
+      "aliases": [],
+      "origin": "United States"
+    },
+    {
+      "title": "In the Summers",
+      "year": 2024,
+      "director": "Alessandra Lacorazza",
+      "aliases": [],
+      "origin": "United States"
+    },
+    {
+      "title": "Love Me",
+      "year": 2024,
+      "director": "Sam Zuchero",
+      "aliases": [],
+      "origin": "United States"
+    },
+    {
+      "title": "Ponyboi",
+      "year": 2024,
+      "director": "Esteban Arango",
+      "aliases": [],
+      "origin": "Colombia"
+    },
+    {
+      "title": "A Real Pain",
+      "year": 2024,
+      "director": "Jesse Eisenberg",
+      "aliases": [],
+      "origin": "United States"
+    },
+    {
+      "title": "Stress Positions",
+      "year": 2024,
+      "director": "Theda Hammel",
+      "aliases": [],
+      "origin": "United States"
+    },
+    {
+      "title": "Suncoast",
+      "year": 2024,
+      "director": "Laura Chinn",
+      "aliases": [],
+      "origin": "United States"
+    }
+  ],
+  "order": 3
+}

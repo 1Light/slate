@@ -1,0 +1,175 @@
+{
+  "name": "Berlinale 2024 — Competition",
+  "entity_type": "urn:entity:movie",
+  "films": [
+    {
+      "title": "Another End",
+      "year": 2024,
+      "director": "Piero Messina",
+      "aliases": [],
+      "origin": "Italy"
+    },
+    {
+      "title": "Architecton",
+      "year": 2024,
+      "director": "Victor Kossakovsky",
+      "aliases": [],
+      "origin": "Russia"
+    },
+    {
+      "title": "Black Tea",
+      "year": 2024,
+      "director": "Abderrahmane Sissako",
+      "aliases": [],
+      "origin": "Mauritania"
+    },
+    {
+      "title": "La cocina",
+      "year": 2024,
+      "director": "Alonso Ruizpalacios",
+      "aliases": [
+        "The Grill",
+        "The Kitchen"
+      ],
+      "origin": "Mexico"
+    },
+    {
+      "title": "Dahomey",
+      "year": 2024,
+      "director": "Mati Diop",
+      "aliases": [],
+      "origin": "Senegal"
+    },
+    {
+      "title": "The Devil's Bath",
+      "year": 2024,
+      "director": "Veronika Franz",
+      "aliases": [
+        "Des Teufels Bad"
+      ],
+      "origin": "Austria"
+    },
+    {
+      "title": "A Different Man",
+      "year": 2024,
+      "director": "Aaron Schimberg",
+      "aliases": [],
+      "origin": "United States"
+    },
+    {
+      "title": "Dying",
+      "year": 2024,
+      "director": "Matthias Glasner",
+      "aliases": [
+        "Sterben"
+      ],
+      "origin": "Germany"
+    },
+    {
+      "title": "The Empire",
+      "year": 2024,
+      "director": "Bruno Dumont",
+      "aliases": [
+        "L'Empire"
+      ],
+      "origin": "France"
+    },
+    {
+      "title": "From Hilde, with Love",
+      "year": 2024,
+      "director": "Andreas Dresen",
+      "aliases": [
+        "In Liebe, Eure Hilde"
+      ],
+      "origin": "Germany"
+    },
+    {
+      "title": "Gloria!",
+      "year": 2024,
+      "director": "Margherita Vicario",
+      "aliases": [
+        "Gloria"
+      ],
+      "origin": "Italy"
+    },
+    {
+      "title": "Foreign Language",
+      "year": 2024,
+      "director": "Claire Burger",
+      "aliases": [
+        "Langue étrangère",
+        "Foreign Tongue"
+      ],
+      "origin": "France"
+    },
+    {
+      "title": "My Favourite Cake",
+      "year": 2024,
+      "director": "Maryam Moghaddam",
+      "aliases": [
+        "My Favorite Cake",
+        "Keyke mahboobe man"
+      ],
+      "origin": "Iran"
+    },
+    {
+      "title": "Pepe",
+      "year": 2024,
+      "director": "Nelson Carlos De Los Santos Arias",
+      "aliases": [],
+      "origin": "Dominican Republic"
+    },
+    {
+      "title": "Shambhala",
+      "year": 2024,
+      "director": "Min Bahadur Bham",
+      "aliases": [],
+      "origin": "Nepal"
+    },
+    {
+      "title": "Small Things Like These",
+      "year": 2024,
+      "director": "Tim Mielants",
+      "aliases": [],
+      "origin": "Belgium"
+    },
+    {
+      "title": "Sons",
+      "year": 2024,
+      "director": "Gustav Möller",
+      "aliases": [
+        "Vogter"
+      ],
+      "origin": "Denmark"
+    },
+    {
+      "title": "Suspended Time",
+      "year": 2024,
+      "director": "Olivier Assayas",
+      "aliases": [
+        "Hors du temps"
+      ],
+      "origin": "France"
+    },
+    {
+      "title": "A Traveler's Needs",
+      "year": 2024,
+      "director": "Hong Sang-soo",
+      "aliases": [
+        "Yeohaengjaui pilyo"
+      ],
+      "origin": "South Korea"
+    },
+    {
+      "title": "Who Do I Belong To",
+      "year": 2024,
+      "director": "Meryam Joobeur",
+      "aliases": [
+        "Mé el Aïn",
+        "La Source"
+      ],
+      "origin": "Tunisia"
+    }
+  ],
+  "order": 1
+}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slate</title>
+<meta name="description" content="Slate reads a curated set as a whole and shows which items reach the same audience, which reaches people nothing else does, and whether anything connects them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Archivo:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header class="bar" id="bar"><span class="wordmark">Slate</span></header>
+
+<section class="opening">
+  <h1>A lineup is not a list. It is a handful of rooms.</h1>
+  <p class="deck">Pick twenty films one at a time and you can still end up
+    filling the same room five times over. Slate reads the set as a whole and
+    shows which items reach the same people, which one reaches people nothing
+    else does, and whether anything connects them.</p>
+  <p class="deck">It works on anything Qloo can rank. Tested on films, music,
+    books, podcasts and television.</p>
+  <div class="opening-actions">
+    <a class="solid" href="#yours">Analyse a lineup</a>
+    <a class="quiet" href="#festivals">See it on three film festivals</a>
+  </div>
+</section>
+
+<span id="festivals" class="anchor"></span>
+<section class="group-head reveal">
+  <h2>Film festivals</h2>
+  <div class="terms">
+    <div>
+      <h4>Bridge</h4>
+      <p>A film that reaches two different crowds at once. It is the overlap
+        between them, so someone who came for one group finds something next
+        door. Instead of programming two separate nights, one slot covers
+        both.</p>
+    </div>
+    <div>
+      <h4>Outlier</h4>
+      <p>A film that covers an audience with a distinct taste from the rest of
+        the lineup. If it sits in a group, it is the one most weakly tied to
+        it: it covers some of that group&rsquo;s audience, and some that
+        nothing else in the lineup covers.</p>
+    </div>
+  </div>
+</section>
+
+<main id="chapters"></main>
+
+<div class="state" id="loading" aria-live="polite">
+  <span class="pulse" aria-hidden="true"></span>
+  <p id="loading-text">Reading the programmes</p>
+</div>
+
+<div class="state problem" id="error" hidden role="alert"><p id="error-text"></p></div>
+
+<section class="views reveal" id="views" hidden>
+  <h2>The same reading, on other things</h2>
+  <p class="lede">Nothing in the engine is about film. These are the other
+    entity types Qloo can rank, each run through the same analysis.</p>
+  <div class="view-tabs" id="view-tabs" role="tablist"></div>
+  <div id="view-body"></div>
+</section>
+
+<section class="checked reveal" id="checked" hidden>
+  <h2>How do we know the findings are real?</h2>
+  <div id="tests"></div>
+</section>
+
+<section class="invite reveal" id="yours">
+  <h2>Try it on a programme you know</h2>
+  <p class="lede">Four to twenty-four titles. A season, a retrospective, a
+    streaming collection, your own shortlist.</p>
+  <div class="invite-form">
+    <label for="own-input">One title per line. Add a year in brackets if the
+      title is ambiguous, like <i>Monster</i> (2023).</label>
+    <textarea id="own-input" rows="8" spellcheck="false"
+      placeholder="Anatomy of a Fall&#10;Perfect Days&#10;The Zone of Interest&#10;Fallen Leaves&#10;Youth (2023)"></textarea>
+    <div class="row">
+      <button type="button" id="own-run" class="solid">Find the shape</button>
+      <p class="fine">Nothing is stored.</p>
+    </div>
+  </div>
+  <div id="own-result"></div>
+</section>
+
+<footer class="foot">
+  <span>Slate</span>
+  <a href="https://github.com" id="repo-link">Source and method</a>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
