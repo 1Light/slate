@@ -21,7 +21,7 @@
     "films": 20,
     "origins": 14,
     "clusters": 5,
-    "bridges": 0,
+    "bridges": 1,
     "largest": 11,
     "sizes": [
       11,
@@ -30,8 +30,8 @@
       2,
       1
     ],
-    "bridge_film": null,
-    "bridge_popularity": null
+    "bridge_film": "May December",
+    "bridge_popularity": 0.9923027928015459
   },
   {
     "slug": "one-genre",

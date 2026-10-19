@@ -422,3 +422,24 @@ def test_no_invented_progress():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     for bad in ("%'", "setInterval", "fakeProgress", "estimated"):
         assert bad not in js, bad
+
+
+def test_the_same_slate_gives_the_same_answer():
+    m = _slate({"A": 6, "B": 6})
+    first = analyse(m)
+    for _ in range(3):
+        again = analyse(_slate({"A": 6, "B": 6}))
+        assert [sorted(g) for g in again.clusters] == [sorted(g) for g in first.clusters]
+        assert [b["film"] for b in again.bridges] == [b["film"] for b in first.bridges]
+        assert [i["film"] for i in again.isolated] == [i["film"] for i in first.isolated]
+
+
+def test_ties_are_broken_by_name_not_by_iteration_order():
+    src = (Path(__file__).resolve().parent.parent / "app" / "structure.py").read_text()
+    knn = src[src.index("def _knn("):src.index("def _betweenness(")]
+    assert "nearest[:k]" in knn
+    assert "round(matrix.distance(a, b), 12), b)" in knn
+    agg = src[src.index("def _agglomerate("):src.index("def _cut_to(")]
+    assert "min(clusters[i] + clusters[j])" in agg
+    bet = src[src.index("def _betweenness("):src.index("def _completeness(")]
+    assert "sorted(adj[v])" in bet and "sorted(pred[w])" in bet

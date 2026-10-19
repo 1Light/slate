@@ -127,7 +127,7 @@ def _choose_k(matrix: Matrix, films: list[str], merges) -> dict:
         if s is None:
             continue
         alone = sum(1 for g in groups if len(g) == 1)
-        scored.append({"k": k, "silhouette": s, "alone": alone})
+        scored.append({"k": k, "silhouette": round(s, 9), "alone": alone})
     if not scored:
         return {"scored": [], "chosen": None, "best": None}
 
@@ -136,7 +136,8 @@ def _choose_k(matrix: Matrix, films: list[str], merges) -> dict:
               and r["k"] <= n * MOST_GROUPS] or scored
     peak = max(r["silhouette"] for r in usable)
 
-    close = [r for r in usable if peak - r["silhouette"] <= K_TOLERANCE]
+    close = [r for r in usable
+             if round(peak - r["silhouette"], 9) <= K_TOLERANCE]
     best = min(close, key=lambda r: r["k"])
     return {
         "scored": scored,
@@ -280,9 +281,10 @@ def _agglomerate(matrix: Matrix):
             for j in range(i + 1, len(clusters)):
                 d = sum(_unit(matrix, x, y) for x in clusters[i] for y in clusters[j])
                 d /= len(clusters[i]) * len(clusters[j])
-                if best is None or d < best[0]:
-                    best = (d, i, j)
-        d, i, j = best
+                key = (round(d, 12), min(clusters[i] + clusters[j]))
+                if best is None or key < best[0]:
+                    best = (key, d, i, j)
+        _key, d, i, j = best
         merges.append((d, list(clusters[i]), list(clusters[j])))
         clusters = [c for k, c in enumerate(clusters) if k not in (i, j)] + [clusters[i] + clusters[j]]
     return merges
@@ -307,8 +309,8 @@ def _knn(matrix: Matrix, k: int) -> dict[str, set[str]]:
     adj = {f: set() for f in matrix.films}
     for a in matrix.films:
         nearest = sorted((b for b in matrix.films if b != a),
-                         key=lambda b: matrix.distance(a, b))[:k]
-        for b in nearest:
+                         key=lambda b: (round(matrix.distance(a, b), 12), b))
+        for b in nearest[:k]:
             adj[a].add(b)
             adj[b].add(a)
     return adj
@@ -325,7 +327,7 @@ def _betweenness(films: list[str], adj: dict[str, set[str]]) -> dict[str, float]
         while queue:
             v = queue.pop(0)
             stack.append(v)
-            for w in adj[v]:
+            for w in sorted(adj[v]):
                 if dist[w] < 0:
                     dist[w] = dist[v] + 1
                     queue.append(w)
@@ -335,7 +337,7 @@ def _betweenness(films: list[str], adj: dict[str, set[str]]) -> dict[str, float]
         delta = {f: 0.0 for f in films}
         while stack:
             w = stack.pop()
-            for v in pred[w]:
+            for v in sorted(pred[w]):
                 if sigma[w]:
                     delta[v] += (sigma[v] / sigma[w]) * (1 + delta[w])
             if w != s:
