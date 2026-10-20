@@ -12,10 +12,11 @@ from pydantic import BaseModel, Field
 
 from .build import (ENTITY_VIEW, LINEUPS, MIN_FILMS, ROOT, VIEW_ORDER,
                     Refused, _compare_row, _films_from_lines, _lineup_ari,
-                    _best_subset_fast, _bridge_check, _diff,
+                    ENTITY_LABEL, _best_subset_fast, _bridge_check, _diff,
                     _load_lineup, _pipeline, _shape_from, _subset)
 from .agent import improve, to_dict
 from .qloo import Qloo, QlooError
+from .structure import analyse
 
 STATIC = ROOT / "static"
 
@@ -32,6 +33,7 @@ _hits: dict[str, list[float]] = defaultdict(list)
 class SlateRequest(BaseModel):
     films: list[str] = Field(min_length=MIN_FILMS, max_length=MAX_FILMS)
     name: str = "Your slate"
+    entity_type: str | None = None
 
 
 class AgentRequest(BaseModel):
@@ -110,9 +112,13 @@ def analyse_custom(req: SlateRequest, request: Request):
                                  "festival programmes are already computed and free.")
     films = _films_from_lines(req.films)
     if len(films) < MIN_FILMS:
-        raise HTTPException(422, f"Give at least {MIN_FILMS} titles.")
+        raise HTTPException(422, f"Add at least {MIN_FILMS} titles.")
+
+    known = req.entity_type in ENTITY_LABEL
+    start = req.entity_type if known else "urn:entity:movie"
     try:
-        _, _, _, _, shape = _pipeline(req.name, "", films, "urn:entity:movie", "custom")
+        _, _, _, _, shape = _pipeline(req.name, "", films, start,
+                                      "preset" if known else "custom")
     except QlooError as exc:
         raise HTTPException(503, str(exc)) from exc
     return shape
@@ -121,6 +127,7 @@ def analyse_custom(req: SlateRequest, request: Request):
 class PanelRequest(BaseModel):
     slug: str | None = None
     films: list[str] | None = None
+    swap: bool = False
     drop: list[str] = Field(default_factory=list)
     add: list[str] = Field(default_factory=list)
     keep: int | None = None
@@ -167,10 +174,49 @@ def panel(req: PanelRequest, request: Request):
             raise HTTPException(422, f"Keep at least {MIN_FILMS} titles.")
         small = _subset(small, _best_subset_fast(small, req.keep))
 
+    if req.swap:
+        if _over_limit(request, "agent", AGENT_PER_HOUR):
+            raise HTTPException(429, "Hourly limit reached for the agent.")
+        try:
+            result = improve(Qloo(), small, analyse(small), slate_name=name,
+                             entity_type=entity_type)
+        except QlooError as exc:
+            raise HTTPException(503, str(exc)) from exc
+
+        agent = to_dict(result)
+        if not result.swaps:
+            shape, _a = _shape_from(name, note, small, "panel", [])
+            shape["diff"] = _diff(base, shape)
+            shape["added"] = []
+            gone = sorted(set(m.films) - set(small.films))
+            shape["dropped"] = gone
+            shape["by_you"] = [t for t in gone if t.lower() in dropped]
+            shape["agent"] = agent
+            return shape
+
+        titles = list(small.films)
+        for sw in result.swaps:
+            titles = [t for t in titles if t != sw.out_title] + [sw.in_title]
+        try:
+            _, _, _, _, shape = _pipeline(name, note, _films_from_lines(titles),
+                                          entity_type, "preset")
+        except QlooError as exc:
+            raise HTTPException(503, str(exc)) from exc
+        shape["diff"] = _diff(base, shape)
+        shape["added"] = [sw.in_title for sw in result.swaps]
+        here = {f["title"] for f in shape["films"]}
+        gone = sorted(set(m.films) - here)
+        shape["dropped"] = gone
+        shape["by_you"] = [t for t in gone if t.lower() in dropped]
+        shape["agent"] = agent
+        return shape
+
     shape, _a = _shape_from(name, note, small, "panel", [])
     shape["diff"] = _diff(base, shape)
     shape["added"] = [f.title for f in extra if f.title in small.films]
-    shape["dropped"] = sorted(set(m.films) - set(small.films))
+    gone = sorted(set(m.films) - set(small.films))
+    shape["dropped"] = gone
+    shape["by_you"] = [t for t in gone if t.lower() in dropped]
     return shape
 
 
@@ -222,6 +268,23 @@ def compare():
             continue
         out.append(_compare_row(slug, shape))
     return JSONResponse(out)
+
+
+EXAMPLES = ROOT / "data" / "examples"
+
+
+@app.get("/api/examples/{slug}")
+def example(slug: str):
+    path = EXAMPLES / f"{slug}.json"
+    if not path.exists() or path.parent != EXAMPLES:
+        raise HTTPException(404, "No such example.")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    return {
+        "name": d["name"],
+        "entity_type": d["entity_type"],
+        "titles": [f["title"] + (f" ({f['year']})" if f.get("year") else "")
+                   for f in d["films"]],
+    }
 
 
 @app.get("/api/views")

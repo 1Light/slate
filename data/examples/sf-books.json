@@ -1,0 +1,51 @@
+{
+  "name": "A science fiction table",
+  "entity_type": "urn:entity:book",
+  "films": [
+    {
+      "title": "The Left Hand of Darkness"
+    },
+    {
+      "title": "Blindsight"
+    },
+    {
+      "title": "The Dispossessed"
+    },
+    {
+      "title": "Solaris"
+    },
+    {
+      "title": "Do Androids Dream of Electric Sheep?"
+    },
+    {
+      "title": "Stranger in a Strange Land"
+    },
+    {
+      "title": "The Forever War"
+    },
+    {
+      "title": "The Stars My Destination"
+    },
+    {
+      "title": "Fahrenheit 451"
+    },
+    {
+      "title": "Brave New World"
+    },
+    {
+      "title": "Slaughterhouse-Five"
+    },
+    {
+      "title": "Flowers for Algernon"
+    },
+    {
+      "title": "The Martian Chronicles"
+    },
+    {
+      "title": "The Time Machine"
+    },
+    {
+      "title": "Childhood's End"
+    }
+  ]
+}

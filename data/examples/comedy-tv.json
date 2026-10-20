@@ -1,0 +1,18 @@
+{
+  "name": "A comedy slate",
+  "entity_type": "urn:entity:tv_show",
+  "films": [
+    {"title": "Arrested Development"},
+    {"title": "30 Rock"},
+    {"title": "Parks and Recreation"},
+    {"title": "The Good Place"},
+    {"title": "Atlanta"},
+    {"title": "Fleabag"},
+    {"title": "Peep Show"},
+    {"title": "Curb Your Enthusiasm"},
+    {"title": "Veep"},
+    {"title": "Community"},
+    {"title": "What We Do in the Shadows"},
+    {"title": "Flight of the Conchords"}
+  ]
+}

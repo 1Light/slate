@@ -100,7 +100,7 @@ ENTITY_LABEL = {
     "urn:entity:movie": "films",
     "urn:entity:artist": "musical artists",
     "urn:entity:book": "books",
-    "urn:entity:tv_show": "television",
+    "urn:entity:tv_show": "TV shows",
     "urn:entity:podcast": "podcasts",
 }
 
@@ -108,25 +108,25 @@ ENTITY_NOUN = {
     "urn:entity:movie": ("film", "films"),
     "urn:entity:artist": ("act", "acts"),
     "urn:entity:book": ("book", "books"),
-    "urn:entity:tv_show": ("series", "series"),
-    "urn:entity:podcast": ("show", "shows"),
+    "urn:entity:tv_show": ("show", "shows"),
+    "urn:entity:podcast": ("podcast", "podcasts"),
 }
 
 ENTITY_VIEW = {
     "urn:entity:artist": "Music",
     "urn:entity:book": "Books",
     "urn:entity:podcast": "Podcasts",
-    "urn:entity:tv_show": "Television",
+    "urn:entity:tv_show": "TV shows",
 }
 VIEW_ORDER = ["urn:entity:artist", "urn:entity:book",
               "urn:entity:podcast", "urn:entity:tv_show"]
 
-OTHER_TYPES = ("urn:entity:artist",)
-ENOUGH = 0.7
+OTHER_TYPES = ("urn:entity:artist", "urn:entity:book",
+               "urn:entity:tv_show", "urn:entity:podcast")
 
 def _read_as(qloo, films, entity_type):
     best = (entity_type, *resolve_all(qloo, films, entity_type))
-    if len(best[1]) >= len(films) * ENOUGH:
+    if len(best[1]) == len(films):
         return best
     for other in OTHER_TYPES:
         if other == entity_type:
@@ -134,7 +134,7 @@ def _read_as(qloo, films, entity_type):
         got = resolve_all(qloo, films, other)
         if len(got[0]) > len(best[1]):
             best = (other, *got)
-        if len(best[1]) >= len(films) * ENOUGH:
+        if len(best[1]) == len(films):
             break
     return best
 
@@ -298,7 +298,7 @@ def _diff(base: dict, now: dict) -> dict:
         parts.append(f"{len(was)} audience{'' if len(was) == 1 else 's'}, "
                      f"now {len(is_)}.")
     else:
-        parts.append(f"Still {len(is_)} audience{'' if len(is_) == 1 else 's'}.")
+        parts.append(f"{len(is_)} audience{'' if len(is_) == 1 else 's'}.")
 
     n = len(moved)
     if n:

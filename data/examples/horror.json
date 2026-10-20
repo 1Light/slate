@@ -1,0 +1,18 @@
+{
+  "name": "A horror season",
+  "entity_type": "urn:entity:movie",
+  "films": [
+    {"title": "Hereditary", "year": 2018},
+    {"title": "The Witch", "year": 2015},
+    {"title": "Get Out", "year": 2017},
+    {"title": "It Follows", "year": 2014},
+    {"title": "The Babadook", "year": 2014},
+    {"title": "Suspiria", "year": 1977},
+    {"title": "The Thing", "year": 1982},
+    {"title": "Rosemary's Baby", "year": 1968},
+    {"title": "Don't Look Now", "year": 1973},
+    {"title": "The Shining", "year": 1980},
+    {"title": "Audition", "year": 1999},
+    {"title": "Possession", "year": 1981}
+  ]
+}

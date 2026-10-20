@@ -1,0 +1,18 @@
+{
+  "name": "A spoken-word podcast slate",
+  "entity_type": "urn:entity:podcast",
+  "films": [
+    {"title": "Fresh Air"},
+    {"title": "Desert Island Discs"},
+    {"title": "This American Life"},
+    {"title": "Radiolab"},
+    {"title": "Planet Money"},
+    {"title": "99% Invisible"},
+    {"title": "Serial"},
+    {"title": "The Moth"},
+    {"title": "Song Exploder"},
+    {"title": "Hidden Brain"},
+    {"title": "Invisibilia"},
+    {"title": "Reply All"}
+  ]
+}

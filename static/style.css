@@ -160,6 +160,7 @@ a { color: inherit; }
 .film.arriving .tag, .film.leaving .tag { color: var(--panel-bright); border-color: var(--panel-muted); }
 .film.leaving { opacity: 0.4; text-decoration: line-through; }
 .film.arriving { border-left-color: var(--panel-bright); }
+.film.arriving .tag { color: var(--panel-bright); border-color: var(--panel-muted); }
 
 .threads { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .threads path { fill: none; stroke: var(--accent-on); stroke-width: 2; stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 900ms cubic-bezier(.3,.8,.4,1) forwards; }
@@ -174,6 +175,7 @@ a { color: inherit; }
 .spend-rows li { display: flex; align-items: baseline; gap: 0.6rem; font-size: 0.9375rem; color: var(--panel-muted); line-height: 1.5; }
 
 .legend { margin-top: var(--s2); padding-top: var(--s2); border-top: 1px solid var(--panel-rule); }
+.legend:empty { display: none; }
 .legend p { font-size: 0.9375rem; line-height: 1.6; color: var(--panel-muted); max-width: 72ch; }
 .legend p + p { margin-top: 0.5rem; }
 .note { margin-top: var(--s1); font-size: 0.9375rem; color: var(--muted); }
@@ -269,9 +271,9 @@ a { color: inherit; }
 
 .invite > .split { justify-items: center; }
 .invite-card {
-  max-width: 40rem; margin: var(--s3) auto 0; text-align: left;
+  max-width: 52rem; margin: var(--s3) auto 0; text-align: left;
   background: var(--card); border: 1px solid var(--rule); border-radius: 10px;
-  padding: var(--s2);
+  padding: var(--s3) var(--s3) var(--s2);
 }
 .invite-card h2 { text-align: center; }
 .invite-card .lede { margin: var(--s1) auto 0; text-align: center; }
@@ -311,11 +313,13 @@ a { color: inherit; }
 .status.broken { border-left-color: var(--warn); }
 .status.broken h4 { color: var(--warn); }
 
-.coverage { max-width: var(--measure); margin-top: var(--s2); padding: 1.1rem 1.1rem 0.9rem; background: var(--raised); border-radius: 6px; }
-.coverage h4 { font-size: 0.875rem; font-weight: 500; }
-.coverage p { margin-top: 0.5rem; font-size: 0.8125rem; color: var(--muted); }
+.coverage {
+  max-width: 52rem; margin: var(--s2) auto 0;
+  padding: var(--s2); background: var(--raised); border-radius: 10px;
+}
+.coverage h4 { font-size: 1rem; font-weight: 500; }
+.coverage p { margin-top: 0.7rem; font-size: 0.9375rem; line-height: 1.6; color: var(--muted); }
 .coverage b { font-weight: 500; color: var(--ink); }
-.coverage .limit { margin-top: 0.8rem; font-size: 0.75rem; color: var(--faint); }
 
 .to-top {
   position: fixed; right: var(--gutter); bottom: var(--gutter); z-index: 40;
@@ -466,3 +470,38 @@ a { color: inherit; }
 @media (max-width: 960px) {
   #agent-body { grid-template-columns: 1fr; }
 }
+
+.columns { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+
+.taken:not([hidden]) {
+  display: flex; align-items: baseline; gap: 0.9rem; flex-wrap: wrap;
+  margin-top: var(--s2); padding-top: var(--s2);
+  border-top: 1px solid var(--panel-rule);
+}
+.taken-head {
+  font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--panel-faint); flex: none;
+}
+.taken-list { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.taken-film {
+  font: inherit; font-size: 0.875rem; cursor: pointer;
+  background: none; border: 0; padding: 0;
+  color: var(--panel-faint); text-decoration: line-through;
+}
+.taken-film:hover { color: var(--panel-bright); }
+
+.panel-diff { max-width: none; }
+.panel-diff p { font-size: clamp(1.125rem, 1.6vw, 1.375rem); line-height: 1.35; }
+.panel-diff p + p { margin-top: 0.3rem; }
+
+.panel-foot { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s1); }
+
+.opening-actions { margin-top: var(--s3); gap: 0.75rem; }
+.opening-actions .solid { font-size: 1rem; padding: 0.75rem 1.6rem; }
+
+.panel-fewer { margin-top: var(--s3); padding-top: var(--s2); }
+#own-result .panel, .panel { padding-top: var(--s3); }
+
+.panel-swap { margin-top: var(--s3); }
+.panel-swap .row { align-items: baseline; gap: 1rem; }
+.panel-swap .fine { max-width: 46ch; line-height: 1.5; }

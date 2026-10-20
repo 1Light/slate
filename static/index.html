@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Slate</title>
-<meta name="description" content="Slate shows which items in a lineup reach the same people. Films, music, books, podcasts and television.">
+<meta name="description" content="Slate shows which items in a lineup reach the same people. Films, music, books, podcasts and TV shows.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Archivo:wght@400;500&display=swap" rel="stylesheet">
@@ -30,18 +30,15 @@
     <div>
       <h1>A lineup is not a list. It is a handful of rooms.</h1>
       <p class="deck">Pick twenty films one at a time and you can still end up
-        filling the same room five times over. Slate reads the set as a whole
-        and shows which items reach the same people, which one reaches people
+        reaching the same audience five times over. Slate reads the set as a
+        whole and shows which items reach the same people, which one reaches people
         nothing else does, and whether anything connects them.</p>
       <p class="deck">It works on anything Qloo can rank. Tested on films,
-        music, books, podcasts and television.</p>
+        music, books, podcasts and TV shows.</p>
       <div class="opening-actions">
         <a class="solid" href="#yours">Try it</a>
       </div>
-      <p class="signpost">Slate in action on three real festivals, a panel to
-        apply changes and see the effect, four validation tests, and a box to
-        try your own.</p>
-    </div>
+</div>
     <div class="stage-hold">
       <div class="stage" id="stage-hero" aria-hidden="true"></div>
     </div>
@@ -83,15 +80,17 @@
 
 <section class="agent band reveal" id="agent" hidden>
   <h2>Slate can also propose the change</h2>
-  <p class="lede">It cuts the slot the programme would miss least, asks Qloo
-    for films unlike the ones already there, rebuilds the whole structure with
-    each candidate, and keeps a change only if the measured shape improves.
-    Finding nothing is an allowed answer.</p>
+  <p class="lede">It takes one of the slots the lineup can spare and adds
+    something that reaches a room the lineup is missing. Every candidate is
+    tested against the whole set, which is rebuilt from scratch each time, so
+    the groups are worked out again rather than one slot changing. A change
+    is kept only if the measured shape improves. Finding nothing is an
+    allowed answer.</p>
   <div id="agent-body"></div>
 </section>
 
 <section class="views band reveal" id="views" hidden>
-  <h2>Slate also reads music, books, podcasts and television</h2>
+  <h2>Slate also reads music, books, podcasts and TV shows</h2>
   <div class="view-tabs" id="view-tabs" role="tablist"></div>
   <div id="view-body"></div>
 </section>
@@ -103,16 +102,17 @@
 
 <section class="invite band reveal" id="yours">
   <div class="invite-card">
-    <h2>Try it on a programme you know</h2>
-    <p class="lede">Four to twenty-four titles. A season, a retrospective, a
-      streaming collection, your own shortlist.</p>
+    <h2>Try it on your own lineup</h2>
+    <p class="lede">Four to twenty-four titles. Films, music, books, podcasts
+      or TV shows.</p>
     <div class="invite-form">
-      <label for="own-input">One title per line. Add a year in brackets if
-        the title is ambiguous, like <i>Monster</i> (2023).</label>
+      <label for="own-input">One per line. Films and TV shows can take a year
+        in brackets, like <i>Monster</i> (2023).</label>
       <textarea id="own-input" rows="7" spellcheck="false"
         placeholder="Anatomy of a Fall&#10;Perfect Days&#10;The Zone of Interest&#10;Fallen Leaves&#10;Youth (2023)"></textarea>
       <div class="row">
         <button type="button" id="own-run" class="solid">Find the shape</button>
+        <button type="button" id="own-example" class="ghost">Use an example</button>
       </div>
     </div>
   </div>
@@ -124,7 +124,7 @@
     <div class="foot-brand">
       <p class="wordmark">Slate</p>
       <p>Shows which items in a lineup reach the same people. Films, music,
-        books, podcasts and television.</p>
+        books, podcasts and TV shows.</p>
     </div>
     <div>
       <h4>Product</h4>

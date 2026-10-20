@@ -1,0 +1,18 @@
+{
+  "name": "A jazz bill",
+  "entity_type": "urn:entity:artist",
+  "films": [
+    {"title": "Kamasi Washington"},
+    {"title": "Robert Glasper"},
+    {"title": "Esperanza Spalding"},
+    {"title": "Christian Scott"},
+    {"title": "Makaya McCraven"},
+    {"title": "Sons of Kemet"},
+    {"title": "GoGo Penguin"},
+    {"title": "Badbadnotgood"},
+    {"title": "Thundercat"},
+    {"title": "Nubya Garcia"},
+    {"title": "Ezra Collective"},
+    {"title": "Snarky Puppy"}
+  ]
+}
