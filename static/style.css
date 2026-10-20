@@ -353,3 +353,82 @@ a { color: inherit; }
   .reveal { opacity: 1; transform: none; }
   .threads path { stroke-dashoffset: 0; }
 }
+
+@keyframes card-fly {
+  0%, 10%  { transform: translate(0, 0) rotate(var(--r0)); opacity: 0.6; }
+  44%, 90% { transform: translate(var(--tx), var(--ty)) rotate(var(--r1)); opacity: 1; }
+  100%     { transform: translate(0, 0) rotate(var(--r0)); opacity: 0.6; }
+}
+@keyframes card-slot { 0%, 4% { opacity: 0; } 18%, 92% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes card-span {
+  0%, 34%  { border-color: var(--panel-rule); background: var(--card-face); }
+  48%, 90% { border-color: var(--accent-on); background: linear-gradient(160deg, #3A3366, #2A2450); }
+  100%     { border-color: var(--panel-rule); background: var(--card-face); }
+}
+@keyframes card-apart {
+  0%, 36%  { border-color: var(--panel-rule); background: var(--card-face); }
+  50%, 90% { border-color: var(--alone-on); background: linear-gradient(160deg, #1E4239, #15302A); }
+  100%     { border-color: var(--panel-rule); background: var(--card-face); }
+}
+
+:root { --card-face: linear-gradient(160deg, #27313A 0%, #1C242B 100%); }
+
+.stage-hold { display: flex; align-items: center; }
+.stage {
+  position: relative; height: 420px; width: 100%; overflow: hidden;
+  background: var(--panel); border-radius: 10px;
+}
+.stage.small { height: 250px; margin-bottom: var(--s2); }
+
+.stage s {
+  position: absolute; display: block; border: 1px dashed #333E47;
+  border-radius: 7px; opacity: 0;
+  animation: card-slot var(--loop) ease-in-out infinite;
+}
+.stage span {
+  position: absolute; font-size: 0.8125rem; font-weight: 500;
+  color: var(--panel-muted); letter-spacing: 0.05em; opacity: 0;
+  animation: card-slot var(--loop) ease-in-out infinite;
+}
+.stage span em {
+  display: block; font-style: normal; font-size: 0.75rem;
+  color: var(--panel-faint); margin-top: 2px; letter-spacing: 0;
+}
+.stage i {
+  position: absolute; left: 0; top: 0; display: block;
+  width: 76px; height: 104px; border-radius: 6px;
+  background: var(--card-face); border: 1px solid #3B464F;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.5);
+  animation: card-fly var(--loop) cubic-bezier(.4,.02,.14,1) infinite;
+}
+.stage.small i { width: 52px; height: 72px; border-radius: 5px; box-shadow: 0 8px 18px rgba(0,0,0,.45); }
+.stage i::before {
+  content: ""; position: absolute; left: 10px; right: 10px; top: 12px;
+  height: 4px; border-radius: 2px; background: #55626C;
+}
+.stage i::after {
+  content: ""; position: absolute; left: 10px; top: 22px;
+  width: 50%; height: 3px; border-radius: 2px; background: #3C4850;
+}
+.stage.small i::before { left: 8px; right: 8px; top: 10px; height: 3px; }
+.stage.small i::after { left: 8px; top: 19px; height: 3px; }
+.stage i.span { animation: card-fly var(--loop) cubic-bezier(.4,.02,.14,1) infinite,
+                           card-span var(--loop) ease-in-out infinite; }
+.stage i.apart { animation: card-fly var(--loop) cubic-bezier(.4,.02,.14,1) infinite,
+                            card-apart var(--loop) ease-in-out infinite; }
+
+.terms { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); margin-top: var(--s3); }
+.terms > div + div { margin-top: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage i { animation: none; opacity: 1; transform: translate(var(--tx), var(--ty)) rotate(var(--r1)); }
+  .stage i.span { border-color: var(--accent-on); }
+  .stage i.apart { border-color: var(--alone-on); }
+  .stage s, .stage span { animation: none; opacity: 1; }
+}
+
+@media (max-width: 960px) {
+  .stage { height: 340px; }
+  .stage.small { height: 230px; }
+  .terms { grid-template-columns: 1fr; }
+}

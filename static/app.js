@@ -71,6 +71,105 @@ const SPELL = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
 const spell = (n) => SPELL[n] || String(n);
 const Caps = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 
+const SHUFFLE = (i) => {
+  const x = Math.sin(i * 73.7 + 5.3) * 4411.9;
+  return x - Math.floor(x);
+};
+
+function cardStage(host, plan) {
+  if (!host) return;
+  const draw = () => {
+    const room = host.clientWidth;
+    if (!room) return;
+    host.textContent = '';
+
+    const { groups, card, step, loop, extra } = plan;
+    const lanes = groups.length + (extra ? 1 : 0);
+    const gap = card.w * 0.55;
+    const wide = lanes * card.w + (lanes - 1) * gap;
+    const left = Math.max(card.w * 0.3, (room - wide) / 2);
+    const laneAt = (i) => left + i * (card.w + gap);
+    const top = card.pad + 22;
+
+    host.style.setProperty('--loop', `${loop}s`);
+
+    groups.forEach((count, g) => {
+      const box = el('s');
+      box.style.left = `${laneAt(g) - 6}px`;
+      box.style.top = `${top}px`;
+      box.style.width = `${card.w + 12}px`;
+      box.style.height = `${(count - 1) * step + card.h + 16}px`;
+      host.appendChild(box);
+
+      const tag = el('span');
+      tag.appendChild(document.createTextNode('ABCDEF'[g]));
+      if (plan.notes) tag.appendChild(el('em', null, `${count} films`));
+      tag.style.left = `${laneAt(g) - 6}px`;
+      tag.style.top = `${top - (plan.notes ? 34 : 21)}px`;
+      host.appendChild(tag);
+    });
+
+    const spots = [];
+    groups.forEach((count, g) => {
+      for (let k = 0; k < count; k += 1) {
+        spots.push({ x: laneAt(g), y: top + 8 + k * step, z: k + 1 });
+      }
+    });
+    if (extra === 'span') {
+      spots.push({
+        x: laneAt(0) + (card.w + gap) / 2 + (card.h - card.w) / 2,
+        y: top + (card.h - card.w) / -2 + card.h * 1.25,
+        z: 40, turn: 90, role: 'span',
+      });
+    } else if (extra === 'apart') {
+      spots.push({
+        x: laneAt(groups.length), y: top + card.h * 0.75, z: 40,
+        turn: -9, role: 'apart',
+      });
+    }
+
+    const from = { x: left + wide / 2 - card.w / 2, y: top + card.h * 0.4 };
+    spots.forEach((spot, n) => {
+      const node = el('i', spot.role || null);
+      const sx = from.x + (SHUFFLE(n) - 0.5) * 10;
+      const sy = from.y + (SHUFFLE(n + 30) - 0.5) * 10;
+      node.style.left = `${sx}px`;
+      node.style.top = `${sy}px`;
+      node.style.setProperty('--r0', `${(SHUFFLE(n + 7) - 0.5) * 16}deg`);
+      node.style.setProperty('--r1',
+        `${spot.turn != null ? spot.turn : (SHUFFLE(n + 61) - 0.5) * 3}deg`);
+      node.style.setProperty('--tx', `${spot.x - sx}px`);
+      node.style.setProperty('--ty', `${spot.y - sy}px`);
+      node.style.zIndex = String(spot.z);
+      node.style.animationDelay = `${n * 0.055}s`;
+      host.appendChild(node);
+    });
+  };
+
+  draw();
+  let waiting;
+  window.addEventListener('resize', () => {
+    clearTimeout(waiting);
+    waiting = setTimeout(draw, 180);
+  }, { passive: true });
+}
+
+function heroStage() {
+  cardStage($('stage-hero'), {
+    groups: [8, 6, 6],
+    card: { w: 76, h: 104, pad: 14 },
+    step: 23, loop: 10, notes: true,
+  });
+}
+
+function markStage(id, kind) {
+  cardStage($(id), {
+    groups: [3, 3, 3],
+    card: { w: 52, h: 72, pad: 10 },
+    step: 15, loop: 8, extra: kind === 'bridge' ? 'span' : 'apart',
+  });
+}
+
 async function start() {
   let list;
   try { list = await ask('/api/lineups'); } catch (e) { problem(e.message); return; }
@@ -98,6 +197,9 @@ async function start() {
   revealAll();
   stickyBar();
   backToTop();
+  heroStage();
+  markStage('stage-bridge', 'bridge');
+  markStage('stage-outlier', 'outlier');
 }
 
 function chapter(d, slug, index) {
@@ -638,6 +740,28 @@ function ariTable(rows) {
   return t;
 }
 
+function settleInto(fig, before, moved) {
+  if (!before.size || reduced) return;
+  const mark = new Set(moved);
+  fig.querySelectorAll('.film[data-title]').forEach((row) => {
+    const was = before.get(row.dataset.title);
+    if (!was) {
+      row.animate([{ opacity: 0 }, { opacity: 1 }],
+        { duration: 420, delay: 180, easing: 'ease-out', fill: 'both' });
+      return;
+    }
+    const now = row.getBoundingClientRect();
+    const dx = was.left - now.left;
+    const dy = was.top - now.top;
+    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+    row.animate(
+      [{ transform: `translate(${dx}px, ${dy}px)` },
+       { transform: 'none' }],
+      { duration: mark.has(row.dataset.title) ? 640 : 460,
+        easing: 'cubic-bezier(.3,.9,.3,1)', fill: 'both' });
+  });
+}
+
 function panel(host, source, baseFilms) {
   const state = { drop: [], add: [], keep: null, films: baseFilms.slice() };
   host.textContent = '';
@@ -726,6 +850,11 @@ function panel(host, source, baseFilms) {
 
       say.textContent = (d.diff && d.diff.line) || '';
       fewer.hidden = false;
+
+      const before = new Map();
+      fig.querySelectorAll('.film[data-title]').forEach((row) => {
+        before.set(row.dataset.title, row.getBoundingClientRect());
+      });
       fig.textContent = '';
       const sec = chapter(d, null);
       sec.classList.add('shown');
@@ -736,6 +865,7 @@ function panel(host, source, baseFilms) {
       const spend = sec.querySelector('.spend');
       if (spend) spend.remove();
       fig.appendChild(sec);
+      settleInto(fig, before, (d.diff && d.diff.moved) || []);
 
       foot.textContent = '';
       const bits = [];

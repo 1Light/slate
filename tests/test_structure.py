@@ -776,3 +776,36 @@ def test_the_back_to_top_is_filled():
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
     block = css[css.index(".to-top {"):css.index("}", css.index(".to-top {"))]
     assert "background: var(--ink)" in block
+
+
+def test_the_three_card_stages_exist():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    for node in ("stage-hero", "stage-bridge", "stage-outlier"):
+        assert node in html, node
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "function cardStage(" in js
+    assert "heroStage()" in js
+    assert "markStage('stage-bridge', 'bridge')" in js
+    assert "markStage('stage-outlier', 'outlier')" in js
+
+
+def test_the_definitions_keep_their_text():
+    import re
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    flat = re.sub(r"\s+", " ", html)
+    assert "reaches two different crowds at once" in flat
+    assert "distinct taste from the rest of the lineup" in flat
+
+
+def test_the_cards_hold_still_for_reduced_motion():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    block = css[css.index("@media (prefers-reduced-motion: reduce) {", css.index(".stage i")):]
+    assert ".stage i { animation: none" in block
+
+
+def test_an_edit_moves_the_rows_rather_than_redrawing():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "function settleInto(" in js
+    block = js[js.index("function settleInto("):js.index("function panel(")]
+    assert "getBoundingClientRect" in block
+    assert "if (!before.size || reduced) return" in block
