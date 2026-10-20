@@ -22,6 +22,31 @@ function onceVisible(node, fn, threshold = 0.2) {
   io.observe(node);
 }
 
+function markWhere() {
+  const tabs = [...document.querySelectorAll('.tabs a')];
+  const spots = tabs
+    .map((tab) => ({ tab, at: document.querySelector(tab.getAttribute('href')) }))
+    .filter((s) => s.at);
+  if (!spots.length) return;
+
+  const mark = () => {
+    const line = window.scrollY + window.innerHeight * 0.3;
+    const passed = spots
+      .map((s) => ({
+        tab: s.tab,
+        top: s.at.getBoundingClientRect().top + window.scrollY,
+      }))
+      .filter((s) => s.top <= line)
+      .sort((a, b) => a.top - b.top);
+    const live = passed.length ? passed[passed.length - 1].tab : null;
+    tabs.forEach((tab) => tab.classList.toggle('here', tab === live));
+  };
+
+  mark();
+  window.addEventListener('scroll', mark, { passive: true });
+  window.addEventListener('resize', mark, { passive: true });
+}
+
 function backToTop() {
   const btn = $('to-top');
   if (!btn) return;
@@ -89,7 +114,11 @@ function cardStage(host, plan) {
     const wide = lanes * card.w + (lanes - 1) * gap;
     const left = Math.max(card.w * 0.3, (room - wide) / 2);
     const laneAt = (i) => left + i * (card.w + gap);
-    const top = card.pad + 22;
+
+    const label = plan.notes ? 38 : 26;
+    const deepest = Math.max(...groups.map((c) => (c - 1) * step + card.h + 16));
+    const whole = label + deepest;
+    const top = label + Math.max(8, (host.clientHeight - whole) / 2);
 
     host.style.setProperty('--loop', `${loop}s`);
 
@@ -102,10 +131,10 @@ function cardStage(host, plan) {
       host.appendChild(box);
 
       const tag = el('span');
-      tag.appendChild(document.createTextNode('ABCDEF'[g]));
+      tag.appendChild(el('u', null, 'ABCDEF'[g]));
       if (plan.notes) tag.appendChild(el('em', null, `${count} films`));
       tag.style.left = `${laneAt(g) - 6}px`;
-      tag.style.top = `${top - (plan.notes ? 34 : 21)}px`;
+      tag.style.top = `${top - label}px`;
       host.appendChild(tag);
     });
 
@@ -175,6 +204,7 @@ async function start() {
   try { list = await ask('/api/lineups'); } catch (e) { problem(e.message); return; }
 
   const host = $('chapters');
+  const byslug = {};
   let n = 0;
   for (const item of list) {
     if (item.slug === 'one-genre') continue;
@@ -183,6 +213,7 @@ async function start() {
     n += 1;
     const sec = chapter(data, item.slug, n);
     host.appendChild(sec);
+    byslug[item.slug] = true;
     if (item.slug === 'sundance2024') {
       const hook = el('section', 'panel reveal');
       hook.id = 'panel';
@@ -192,11 +223,13 @@ async function start() {
   }
   if (!n) { problem('No programmes could be read.'); return; }
 
+  agentSection(byslug);
   viewTabs();
   tests();
   revealAll();
   stickyBar();
   backToTop();
+  markWhere();
   heroStage();
   markStage('stage-bridge', 'bridge');
   markStage('stage-outlier', 'outlier');
@@ -905,6 +938,76 @@ function panel(host, source, baseFilms) {
 
   drawChips();
   drawSizes(baseFilms.length);
+}
+
+function swapRow(sw) {
+  const li = el('li');
+  li.appendChild(el('span', 'out', sw.out));
+  li.appendChild(el('span', 'arrow', '\u2192'));
+  li.appendChild(el('span', 'in', sw.in + (sw.year ? ` (${sw.year})` : '')));
+  if (sw.reason) li.appendChild(el('p', 'why', sw.reason));
+  return li;
+}
+
+function agentCase(host, name, agent) {
+  const box = el('article', 'agent-case');
+  box.appendChild(el('p', 'agent-where', name));
+
+  if (agent.swaps.length) {
+    const first = agent.swaps[0];
+    const last = agent.swaps[agent.swaps.length - 1];
+    const shape = el('p', 'agent-shape');
+    shape.appendChild(el('b', null, String(first.before.clusters)));
+    shape.appendChild(document.createTextNode(' audiences becomes '));
+    shape.appendChild(el('b', null, String(last.after.clusters)));
+    shape.appendChild(document.createTextNode('. The largest group drops from '));
+    shape.appendChild(el('b', null, String(first.before.largest_cluster)));
+    shape.appendChild(document.createTextNode(' to '));
+    shape.appendChild(el('b', null, String(last.after.largest_cluster)));
+    shape.appendChild(document.createTextNode('.'));
+    box.appendChild(shape);
+
+    const list = el('ul', 'swaps');
+    agent.swaps.forEach((sw) => list.appendChild(swapRow(sw)));
+    box.appendChild(list);
+  } else {
+    box.appendChild(el('p', 'agent-shape', 'Nothing was changed.'));
+    box.appendChild(el('p', 'why',
+      'Every replacement it tested landed inside a group the programme '
+      + 'already covers.'));
+    if (agent.rejected && agent.rejected.length) {
+      box.appendChild(el('p', 'rejects-head', 'Tested and turned down'));
+      const ul = el('ul', 'rejects');
+      agent.rejected.slice(0, 4).forEach((r) => {
+        const li = el('li');
+        li.appendChild(el('span', 'out', r.film));
+        li.appendChild(document.createTextNode(` \u2014 ${r.why}`));
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+    }
+  }
+  host.appendChild(box);
+}
+
+async function agentSection(byslug) {
+  const host = $('agent-body');
+  if (!host) return;
+  const want = [['cannes2023', 'Cannes 2023'], ['berlinale2024', 'Berlinale 2024']];
+  let built = 0;
+  for (const [slug, name] of want) {
+    if (!byslug[slug]) continue;
+    try {
+      const r = await ask('/api/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+      agentCase(host, name, r.agent);
+      built += 1;
+    } catch {  }
+  }
+  if (built) show($('agent'));
 }
 
 async function viewTabs() {

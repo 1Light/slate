@@ -809,3 +809,54 @@ def test_an_edit_moves_the_rows_rather_than_redrawing():
     block = js[js.index("function settleInto("):js.index("function panel(")]
     assert "getBoundingClientRect" in block
     assert "if (!before.size || reduced) return" in block
+
+
+def test_the_page_says_what_is_on_it():
+    import re
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    flat = re.sub(r"\s+", " ", html)
+    assert "Slate in action on three real festivals" in flat
+    assert "four validation tests" in flat
+    assert 'class="signpost"' in html
+    opening = html[html.index('class="opening'):html.index("</section>", html.index('class="opening'))]
+    assert "signpost" in opening
+
+
+def test_the_agent_is_visible_without_interaction():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    assert 'id="agent"' in html
+    assert "Finding nothing is an allowed answer" in html
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "async function agentSection(" in js
+    assert "agentSection(byslug)" in js
+
+
+def test_the_agent_shows_the_run_it_declined():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("function agentCase("):js.index("async function agentSection(")]
+    assert "Nothing was changed" in block
+    assert "Tested and turned down" in block
+
+
+def test_group_letters_look_the_same_everywhere():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    head = css[:css.index("{", css.index(".column-letter"))]
+    for sel in (".column-letter", ".spend-letter", ".stage span u"):
+        assert sel in head, sel
+    block = css[css.index(".column-letter"):css.index("}", css.index(".column-letter"))]
+    assert "background: var(--panel-bright)" in block
+    assert "color: var(--panel)" in block
+
+
+def test_the_signpost_sits_in_the_hero():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    block = css[css.index(".signpost {"):css.index("}", css.index(".signpost {"))]
+    assert "text-align: center" not in block
+    assert "var(--faint)" in block
+
+
+def test_the_tabs_show_where_you_are():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".tabs a.here" in css
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "markWhere" in js
