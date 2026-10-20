@@ -7,24 +7,56 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.main import _compare_row, _load_lineup, _pipeline   # noqa: E402
+from app.build import (LINEUPS, _bridge_check, _compare_row,   # noqa: E402
+                       _load_lineup, _pipeline)
 
-OUT = Path(__file__).resolve().parent.parent / "data" / "precomputed.json"
+DATA = Path(__file__).resolve().parent.parent / "data"
 
 
 def main() -> int:
-    rows = []
-    for path in sorted((OUT.parent / "lineups").glob("*.json")):
-        if path.stem.startswith("_"):
-            continue
+    rows, served = [], {}
+
+    for path in sorted(LINEUPS.glob("*.json")):
         slug = path.stem
         name, note, films, entity_type = _load_lineup(slug)
-        shape = _pipeline(name, note, films, entity_type, "preset")[-1]
+        try:
+            shape = _pipeline(name, note, films, entity_type, "preset")[-1]
+        except Exception as exc:
+            print(f"  {slug}: skipped ({type(exc).__name__})")
+            continue
+        served[slug] = shape
+        if slug.startswith("_"):
+            print(f"  {slug}: {len(shape['clusters'])} groups  (probe)")
+            continue
         rows.append(_compare_row(slug, shape))
         print(f"  {slug}: {rows[-1]['clusters']} clusters, "
               f"{rows[-1]['bridges']} bridges")
-    OUT.write_text(json.dumps(rows, indent=2), encoding="utf-8")
-    print(f"wrote {OUT}")
+
+    (DATA / "precomputed.json").write_text(
+        json.dumps(rows, indent=2), encoding="utf-8")
+    (DATA / "served.json").write_text(
+        json.dumps(served, ensure_ascii=False), encoding="utf-8")
+
+    v_path = DATA / "validation.json"
+    v = json.loads(v_path.read_text(encoding="utf-8")) if v_path.exists() else {}
+    try:
+        v["bridge"] = _bridge_check()
+    except Exception as exc:
+        print(f"  bridge check skipped ({type(exc).__name__})")
+    v["lineup_ari"] = [
+        {"name": s["name"].split("\u2014")[0].strip(),
+         "ari": s["stability"]["ari"]}
+        for slug, s in served.items()
+        if not slug.startswith("_") and s.get("stability")
+        and s["stability"].get("ari") is not None
+    ]
+    v["lineup_ari"].sort(key=lambda r: -r["ari"])
+    v_path.write_text(json.dumps(v, indent=2, ensure_ascii=False),
+                      encoding="utf-8")
+
+    print(f"wrote {DATA / 'precomputed.json'}")
+    print(f"wrote {DATA / 'served.json'}  ({len(served)} lineups)")
+    print(f"wrote {v_path}  (bridge check and lineup ARI)")
     return 0
 
 

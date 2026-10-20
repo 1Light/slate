@@ -280,14 +280,14 @@ def test_probe_lineups_stay_out_of_the_product():
 
 
 def test_a_pasted_music_lineup_is_not_read_as_films():
-    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
     assert "def _read_as(" in src
     assert "urn:entity:artist" in src
     assert 'source == "custom"' in src
 
 
 def test_the_engine_says_what_it_read():
-    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
     assert "ENTITY_LABEL" in src
     assert '"reading"' in src
 
@@ -324,18 +324,19 @@ def test_the_hero_says_what_slate_is_before_showing_a_case():
     opening = html[html.index('class="opening"'):html.index("</section>", html.index('class="opening"'))]
     for word in ("films", "music", "books", "podcasts", "television"):
         assert word in opening, word
-    assert "Analyse a lineup" in opening
-    assert html.count("Analyse a lineup") == 1
+    assert "Try it" in opening
+    assert "See it on three film festivals" not in html
+    assert "Analyse a lineup" not in html
 
 
 def test_probe_lineups_do_not_reach_the_main_page():
     src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
-    block = src[src.index("def lineups("):src.index("def lineup(")]
+    block = src[src.index("def lineups("):src.index("SERVED =")]
     assert 'startswith("_")' in block
 
 
 def test_the_noun_follows_the_entity_type():
-    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
     assert "ENTITY_NOUN" in src
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     assert "' acts' : ' films'" not in js
@@ -398,10 +399,33 @@ def test_no_em_dashes_in_the_page():
         assert "\u2014" not in (root / name).read_text(), name
 
 
-def test_the_declined_run_shows_what_was_turned_down():
+def test_the_three_festivals_are_shown_the_same_way():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    assert "function declined(" in js
-    assert "Tested and turned down" in js
+    for gone in ("function decision(", "function declined(", "function decisions(",
+                 "function groupBlock(", "Let the agent try"):
+        assert gone not in js, gone
+
+
+def test_the_outlier_has_its_own_colour():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert "--alone:" in css
+    assert ".film.alone { border-left-color: var(--alone); }" in css
+
+
+def test_the_header_links_to_every_section():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    tabs = html[html.index('<nav class="tabs">'):html.index("</nav>")]
+    for target in ("#festivals", "#views", "#checked", "#yours"):
+        assert target in tabs, target
+
+
+def test_the_footer_links_resolve():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    foot = html[html.index('<footer'):html.index("</footer>")]
+    assert "github.com/1Light/slate" in foot
+    assert "qloo.com" in foot and "qloo.devpost.com" in foot
+    assert "https://github.com\"" not in foot
+    assert "Method" not in foot
 
 
 def test_the_three_failures_stay_distinct():
@@ -443,3 +467,65 @@ def test_ties_are_broken_by_name_not_by_iteration_order():
     assert "min(clusters[i] + clusters[j])" in agg
     bet = src[src.index("def _betweenness("):src.index("def _completeness(")]
     assert "sorted(adj[v])" in bet and "sorted(pred[w])" in bet
+
+
+def test_preset_lineups_are_served_from_a_file():
+    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    assert "_precomputed(" in src
+    block = src[src.index("def lineup("):src.index("@app.post")]
+    assert "ready is not None" in block
+
+
+def test_validation_does_not_recompute_what_is_already_stored():
+    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    block = src[src.index("def validation("):]
+    block = block[:block.index("@app.get")]
+    assert '"bridge" not in out' in block
+    assert '"lineup_ari" not in out' in block
+
+
+def test_the_builders_do_not_import_the_web_framework():
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    for bad in ("fastapi", "FastAPI", "HTTPException", "JSONResponse"):
+        assert bad not in src, bad
+
+
+def test_precompute_writes_what_the_page_reads():
+    src = (Path(__file__).resolve().parent.parent / "scripts" / "precompute.py").read_text()
+    assert "served.json" in src
+    assert "precomputed.json" in src
+    assert "_bridge_check()" in src
+    assert "lineup_ari" in src
+
+
+def test_editing_a_lineup_makes_no_new_qloo_calls():
+    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    block = src[src.index("def panel("):src.index('@app.post("/api/agent")')]
+    assert "_subset(m, keep)" in block
+    assert "_best_subset_fast(" in block
+
+
+def test_a_smaller_lineup_is_re_ranked_not_re_queried():
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    block = src[src.index("def _subset("):src.index("def _shape_from(")]
+    assert "_rerank(m.ranks, keep)" in block
+    assert "qloo" not in block.lower()
+
+
+def test_the_change_line_is_computed_from_both_partitions():
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    block = src[src.index("def _diff("):src.index("def _reaches(")]
+    for word in ("groups_before", "groups_after", "moved", "bridges_lost",
+                 "bridges_gained"):
+        assert word in block, word
+
+
+def test_the_panel_appears_under_sundance_and_under_your_own_slate():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "panel(hook, { slug: item.slug }" in js
+    assert "panel(hook, { films }" in js
+
+
+def test_the_panel_can_be_reset():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "Reset to the real lineup" in js

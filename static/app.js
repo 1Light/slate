@@ -22,6 +22,15 @@ function onceVisible(node, fn, threshold = 0.2) {
   io.observe(node);
 }
 
+function backToTop() {
+  const btn = $('to-top');
+  if (!btn) return;
+  const mark = () => { btn.hidden = window.scrollY < window.innerHeight * 0.8; };
+  mark();
+  window.addEventListener('scroll', mark, { passive: true });
+  btn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function stickyBar() {
   const bar = $('bar');
   if (!bar) return;
@@ -65,7 +74,6 @@ async function start() {
   try { list = await ask('/api/lineups'); } catch (e) { problem(e.message); return; }
 
   const host = $('chapters');
-  const byslug = {};
   let n = 0;
   for (const item of list) {
     if (item.slug === 'one-genre') continue;
@@ -73,18 +81,22 @@ async function start() {
     try { data = await ask(`/api/lineups/${item.slug}`); } catch { continue; }
     n += 1;
     const sec = chapter(data, item.slug, n);
-    if (item.slug === 'cannes2023') sec.id = 'cannes';
     host.appendChild(sec);
-    byslug[item.slug] = { data, sec };
+    if (item.slug === 'sundance2024') {
+      const hook = el('section', 'panel reveal');
+      hook.id = 'panel';
+      host.appendChild(hook);
+      panel(hook, { slug: item.slug }, data.films.map((f) => f.title));
+    }
   }
   $('loading').hidden = true;
   if (!n) { problem('No programmes could be read.'); return; }
 
-  decisions(byslug);
   viewTabs();
   tests();
   revealAll();
   stickyBar();
+  backToTop();
 }
 
 function chapter(d, slug, index) {
@@ -343,139 +355,6 @@ function threads(d, { cols, svg }) {
       under.style.setProperty('--len', len);
     });
   });
-}
-
-function groupBlock(films, label, marks) {
-  const col = el('div', 'column');
-  col.appendChild(columnHead(films.length));
-  films.forEach((t) => {
-    const row = el('span', 'film');
-    row.dataset.title = t;
-    row.appendChild(document.createTextNode(t));
-    const mark = marks && marks[t];
-    if (mark) {
-      row.classList.add(mark === 'out' ? 'leaving' : 'arriving');
-      row.appendChild(el('span', 'tag', mark === 'out' ? 'replaced' : 'new'));
-    }
-    col.appendChild(row);
-  });
-  if (label) col.appendChild(el('p', 'fine', label));
-  return col;
-}
-
-function decision(d, agent, host) {
-  host.textContent = '';
-  const before = agent.before_groups || [];
-  const after = agent.after_groups || [];
-  if (!before.length || !after.length || !agent.swaps.length) return;
-
-  const biggest = before.slice().sort((a, b) => b.length - a.length)[0];
-  const rest = d.films.length - biggest.length;
-  const marks = {};
-  agent.swaps.forEach((sw) => { marks[sw.out] = 'out'; marks[sw.in] = 'in'; });
-
-  const head = el('h2', 'verdict-line');
-  head.textContent = `At Cannes, one audience group held ${biggest.length} of `
-    + `the ${d.films.length} films.`;
-  host.appendChild(head);
-  host.appendChild(el('p', 'verdict-sub',
-    'Slate tested replacement candidates against the lineup\u2019s '
-    + 'cultural-affinity structure and accepted '
-    + `${spell(agent.swaps.length)} swap${agent.swaps.length === 1 ? '' : 's'}. `
-    + `The result is ${spell(after.length)} audience groups, the largest `
-    + `holding ${Math.max(...after.map((g) => g.length))}.`));
-
-  const grid = el('div', 'decision');
-
-  const left = el('div', 'decision-side');
-  left.appendChild(el('p', 'state-label', 'Before \u2014 the crowded group'));
-  const lcols = el('div', 'columns');
-  lcols.appendChild(groupBlock(biggest,
-    `The other ${rest} slots are unchanged and are not shown.`, marks));
-  left.appendChild(lcols);
-
-  const right = el('div', 'decision-side');
-  right.appendChild(el('p', 'state-label',
-    'After \u2014 the whole lineup, regrouped'));
-  const rcols = el('div', 'columns wrapped');
-  after.slice().sort((a, b) => b.length - a.length)
-    .forEach((g) => rcols.appendChild(groupBlock(g, null, marks)));
-  right.appendChild(rcols);
-
-  grid.append(left, right);
-  host.appendChild(grid);
-
-  const swaps = el('ul', 'swaps');
-  agent.swaps.forEach((sw) => {
-    const li = el('li');
-    li.appendChild(el('span', 'out', sw.out));
-    li.appendChild(el('span', 'arrow', '\u2192'));
-    li.appendChild(el('span', 'in', sw.in + (sw.year ? ` (${sw.year})` : '')));
-    if (sw.reason) li.appendChild(el('p', 'why', sw.reason));
-    swaps.appendChild(li);
-  });
-  host.appendChild(swaps);
-
-  const trail = el('ol', 'trace');
-  agent.steps.filter((x) => x.act !== 'reject').slice(0, 5).forEach((step) => {
-    const li = el('li');
-    li.dataset.act = step.act;
-    li.appendChild(el('p', null, step.detail));
-    trail.appendChild(li);
-  });
-  host.appendChild(trail);
-}
-
-function declined(d, agent, host) {
-  host.textContent = '';
-  host.appendChild(el('h3', 'declined-head', 'Sometimes the lineup stays as it is.'));
-  host.appendChild(el('p', 'lede',
-    'Here the agent cut the slot the programme would miss least, asked Qloo '
-    + 'for films unlike the ones '
-    + 'already there, and tested each against the rebuilt structure. '
-    + 'No candidate met the rule for improving the measured shape.'));
-  if (agent.rejected && agent.rejected.length) {
-    host.appendChild(el('p', 'rejects-head', 'Tested and turned down'));
-    const ul = el('ul', 'rejects');
-    agent.rejected.slice(0, 4).forEach((r) => {
-      const li = el('li');
-      li.appendChild(el('span', 'out', r.film));
-      li.appendChild(document.createTextNode(` \u2014 ${r.why}`));
-      ul.appendChild(li);
-    });
-    host.appendChild(ul);
-  }
-}
-
-async function decisions(byslug) {
-  const cannes = byslug['cannes2023'];
-  if (cannes) {
-    const host = el('div', 'decision-block');
-    cannes.sec.appendChild(host);
-    try {
-      const r = await ask('/api/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: 'cannes2023' }),
-      });
-      if (r.agent.swaps.length) decision(cannes.data, r.agent, host);
-      else declined(cannes.data, r.agent, host);
-    } catch { host.remove(); }
-  }
-
-  const berlinale = byslug['berlinale2024'];
-  if (!berlinale) return;
-  const decline = el('div', 'declined-block');
-  berlinale.sec.appendChild(decline);
-  try {
-    const r = await ask('/api/agent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: 'berlinale2024' }),
-    });
-    if (!r.agent.swaps.length) declined(berlinale.data, r.agent, decline);
-    else decline.remove();
-  } catch { decline.remove(); }
 }
 
 function controlFigure(d, host) {
@@ -762,6 +641,138 @@ function ariTable(rows) {
   return t;
 }
 
+function panel(host, source, baseFilms) {
+  const state = { drop: [], add: [], keep: null, films: baseFilms.slice() };
+  host.textContent = '';
+
+  const box = el('div', 'panel-box');
+  box.appendChild(el('h3', null, 'Analyse the lineup'));
+  box.appendChild(el('p', 'lede',
+    'Take films out, or put one in. The groups are worked out again each time.'));
+  const chips = el('div', 'chips');
+  box.appendChild(chips);
+
+  const row = el('div', 'row');
+  const field = el('input');
+  field.type = 'text';
+  field.placeholder = 'Add a film by title';
+  const addBtn = el('button', 'ghost', 'Add');
+  addBtn.type = 'button';
+  row.append(field, addBtn);
+  box.appendChild(row);
+  host.appendChild(box);
+
+  const say = el('p', 'panel-diff');
+  const fig = el('div', 'panel-figure');
+  const foot = el('p', 'panel-foot');
+  host.append(say, fig, foot);
+
+  const fewer = el('div', 'panel-fewer');
+  fewer.appendChild(el('h3', null, 'Fit it into fewer slots'));
+  fewer.appendChild(el('p', 'lede',
+    'If you only have room for some of these, Slate picks the set that '
+    + 'reaches the most separate audiences.'));
+  const frow = el('div', 'row');
+  frow.appendChild(el('span', 'fine', 'Keep'));
+  const pick = el('select');
+  const count = el('span', 'fine');
+  const findBtn = el('button', 'ghost', 'Find the best set');
+  findBtn.type = 'button';
+  frow.append(pick, count, findBtn);
+  fewer.appendChild(frow);
+  host.appendChild(fewer);
+
+  const drawChips = () => {
+    chips.textContent = '';
+    state.films.forEach((t) => {
+      const out = state.drop.includes(t);
+      const chip = el('button', out ? 'chip gone' : 'chip');
+      chip.type = 'button';
+      chip.appendChild(document.createTextNode(t));
+      if (!out) chip.appendChild(el('span', 'chip-x', '\u00d7'));
+      chip.onclick = () => {
+        state.drop = out ? state.drop.filter((x) => x !== t)
+                         : state.drop.concat(t);
+        state.keep = null;
+        run();
+      };
+      chips.appendChild(chip);
+    });
+  };
+
+  const drawSizes = (n) => {
+    pick.textContent = '';
+    for (let k = n - 1; k >= 4; k -= 1) {
+      pick.appendChild(el('option', null, String(k)));
+    }
+    count.textContent = `of the ${n}`;
+    findBtn.disabled = n <= 4;
+  };
+
+  const run = async () => {
+    say.textContent = 'Working it out';
+    fig.textContent = '';
+    try {
+      const body = { drop: state.drop, add: state.add };
+      if (source.slug) body.slug = source.slug;
+      else body.films = source.films;
+      if (state.keep) body.keep = state.keep;
+
+      const d = await ask('/api/panel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      say.textContent = (d.diff && d.diff.line) || '';
+      fig.textContent = '';
+      const sec = chapter(d, null);
+      sec.classList.add('shown');
+      const head = sec.querySelector('.chapter-title');
+      if (head) head.remove();
+      fig.appendChild(sec);
+
+      foot.textContent = '';
+      const bits = [];
+      if (d.dropped && d.dropped.length) bits.push(`Removed: ${d.dropped.join(', ')}.`);
+      if (d.added && d.added.length) bits.push(`Added: ${d.added.join(', ')}.`);
+      if (bits.length) {
+        foot.appendChild(document.createTextNode(`${bits.join(' ')} `));
+        const reset = el('button', 'linky', 'Reset to the real lineup');
+        reset.type = 'button';
+        reset.onclick = () => {
+          state.drop = []; state.add = []; state.keep = null;
+          state.films = baseFilms.slice();
+          drawChips(); run();
+        };
+        foot.appendChild(reset);
+      }
+      drawSizes(d.films.length);
+    } catch (e) {
+      say.textContent = '';
+      fig.textContent = '';
+      failure(e, fig, run);
+    }
+  };
+
+  addBtn.onclick = () => {
+    const t = field.value.trim();
+    if (!t) return;
+    state.add = state.add.concat(t);
+    state.films = state.films.concat(t);
+    state.keep = null;
+    field.value = '';
+    drawChips();
+    run();
+  };
+  field.onkeydown = (ev) => { if (ev.key === 'Enter') addBtn.onclick(); };
+  findBtn.onclick = () => { state.keep = Number(pick.value); run(); };
+
+  drawChips();
+  drawSizes(baseFilms.length);
+  run();
+}
+
 async function viewTabs() {
   let list;
   try { list = await ask('/api/views'); } catch { return; }
@@ -903,6 +914,9 @@ async function runOwn() {
     const sec = chapter(d, null);
     sec.classList.add('shown');
     out.appendChild(sec);
+    const hook = el('div', 'panel');
+    out.appendChild(hook);
+    panel(hook, { films }, d.films.map((f) => f.title));
     sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     out.textContent = '';

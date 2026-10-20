@@ -12,7 +12,16 @@
 </head>
 <body>
 
-<header class="bar" id="bar"><span class="wordmark">Slate</span></header>
+<header class="bar" id="bar">
+  <span class="wordmark">Slate</span>
+  <nav class="tabs">
+    <a href="#festivals">Film festivals</a>
+    <a href="#views">Other media</a>
+    <a href="#panel">Analyse the lineup</a>
+    <a href="#checked">The evidence</a>
+    <a href="#yours">Try it</a>
+  </nav>
+</header>
 
 <section class="opening">
   <h1>A lineup is not a list. It is a handful of rooms.</h1>
@@ -23,14 +32,16 @@
   <p class="deck">It works on anything Qloo can rank. Tested on films, music,
     books, podcasts and television.</p>
   <div class="opening-actions">
-    <a class="solid" href="#yours">Analyse a lineup</a>
-    <a class="quiet" href="#festivals">See it on three film festivals</a>
+    <a class="solid" href="#yours">Try it</a>
   </div>
 </section>
 
 <span id="festivals" class="anchor"></span>
 <section class="group-head reveal">
   <h2>Film festivals</h2>
+  <p class="lede">Here is what Slate sees in a lineup, using three real film
+    festivals: Berlinale 2024 in Germany, Cannes 2023 in France and Sundance
+    2024 in the United States.</p>
   <div class="terms">
     <div>
       <h4>Bridge</h4>
@@ -59,9 +70,7 @@
 <div class="state problem" id="error" hidden role="alert"><p id="error-text"></p></div>
 
 <section class="views reveal" id="views" hidden>
-  <h2>The same reading, on other things</h2>
-  <p class="lede">Nothing in the engine is about film. These are the other
-    entity types Qloo can rank, each run through the same analysis.</p>
+  <h2>Slate also reads music, books, podcasts and television</h2>
   <div class="view-tabs" id="view-tabs" role="tablist"></div>
   <div id="view-body"></div>
 </section>
@@ -89,9 +98,40 @@
 </section>
 
 <footer class="foot">
-  <span>Slate</span>
-  <a href="https://github.com" id="repo-link">Source and method</a>
+  <div class="foot-top">
+    <div class="foot-brand">
+      <p class="wordmark">Slate</p>
+      <p>Shows which items in a lineup reach the same people. Films, music,
+        books, podcasts and television.</p>
+    </div>
+    <div>
+      <h4>Product</h4>
+      <a href="#yours">Try it</a>
+      <a href="#festivals">Film festivals</a>
+      <a href="#views">Other media</a>
+    </div>
+    <div>
+      <h4>How it works</h4>
+      <a href="#checked">The evidence</a>
+      <a href="https://github.com/1Light/slate">Source code</a>
+    </div>
+    <div>
+      <h4>Built with</h4>
+      <a href="https://qloo.com">Qloo</a>
+      <a href="https://qloo.devpost.com">Agentic Hackathon</a>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span>Slate, 2026</span>
+    <span>Slate&rsquo;s groups are inferred from taste data, not ticket sales.</span>
+  </div>
 </footer>
+
+<button type="button" class="to-top" id="to-top" aria-label="Back to top" hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</button>
 
 <script src="/static/app.js"></script>
 </body>

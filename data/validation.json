@@ -110,5 +110,76 @@
     "film_plateau_width": 0.1,
     "verdict": "Artists resolve better than films and separate more sharply, but the cutoff holds only within ±0.01 against film's ±0.05. One lineup cannot justify a cutoff that fragile, so Slate stays with one entity type.",
     "reproduce": "python3 scripts/probe_entity.py _probe-coachella2024"
-  }
+  },
+  "bridge": {
+    "rows": [
+      {
+        "lineup": "Berlinale 2024",
+        "rho": -0.27,
+        "top_by_betweenness": "Dying",
+        "top_popularity": 0.887,
+        "top_was_reported": false,
+        "bridges": []
+      },
+      {
+        "lineup": "Cannes 2023",
+        "rho": 0.34,
+        "top_by_betweenness": "May December",
+        "top_popularity": 0.992,
+        "top_was_reported": true,
+        "bridges": [
+          "May December"
+        ]
+      },
+      {
+        "lineup": "One genre",
+        "rho": -0.44,
+        "top_by_betweenness": "The Fountain",
+        "top_popularity": 0.984,
+        "top_was_reported": false,
+        "bridges": []
+      },
+      {
+        "lineup": "Sundance 2024",
+        "rho": 0.56,
+        "top_by_betweenness": "A Real Pain",
+        "top_popularity": 0.999,
+        "top_was_reported": false,
+        "bridges": [
+          "Good One"
+        ]
+      }
+    ],
+    "films": 62,
+    "pooled_rho": 0.08,
+    "caught": {
+      "lineup": "Sundance 2024",
+      "rho": 0.56,
+      "top_by_betweenness": "A Real Pain",
+      "top_popularity": 0.999,
+      "top_was_reported": false,
+      "bridges": [
+        "Good One"
+      ]
+    },
+    "reproduce": "python3 scripts/probe_bridge.py"
+  },
+  "lineup_ari": [
+    {
+      "name": "One genre",
+      "ari": 0.971
+    },
+    {
+      "name": "Berlinale 2024",
+      "ari": 0.863
+    },
+    {
+      "name": "Cannes 2023",
+      "ari": 0.757
+    },
+    {
+      "name": "Sundance 2024",
+      "ari": 0.738
+    }
+  ]
 }
