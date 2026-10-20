@@ -59,8 +59,9 @@ async function ask(url, options) {
 }
 
 function problem(message) {
-  $('loading').hidden = true;
-  $('error').hidden = false;
+  const box = $('error');
+  if (!box) return;
+  box.hidden = false;
   $('error-text').textContent = message;
 }
 const SPELL = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
@@ -90,7 +91,6 @@ async function start() {
       panel(hook, { slug: item.slug }, data.films.map((f) => f.title));
     }
   }
-  $('loading').hidden = true;
   if (!n) { problem('No programmes could be read.'); return; }
 
   viewTabs();
@@ -106,30 +106,25 @@ function chapter(d, slug, index) {
 
   const title = el('p', 'chapter-title');
   if (index) title.appendChild(el('span', 'num', String(index)));
-  title.appendChild(document.createTextNode(d.name));
-  if (d.reading && d.reading !== 'films') {
-    title.appendChild(el('span', 'reading', `read as ${d.reading}`));
-  }
+  title.appendChild(el('span', 'where', d.name));
+
   sec.appendChild(title);
   sec.appendChild(verdict(d));
 
   const fig = el('div', 'figure');
+  const sizes = el('div', 'sizes');
   const cols = el('div', 'columns');
   const spend = el('div', 'spend');
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('class', 'threads');
-  svg.setAttribute('aria-hidden', 'true');
   const legend = el('p', 'legend');
-  fig.append(cols, spend, svg, legend);
+  fig.append(sizes, cols, spend, legend);
   sec.appendChild(fig);
 
-  board(d, { cols, spend, svg, legend });
+  board(d, { cols, spend, legend, sizes });
   return sec;
 }
 
 function verdict(d) {
   const h = d.headline;
-  const wrap = document.createDocumentFragment();
   const line = el('h2', 'verdict-line');
   const put = (t) => line.appendChild(document.createTextNode(t));
   const num = (n) => line.appendChild(el('b', null, String(n)));
@@ -138,13 +133,7 @@ function verdict(d) {
   if (h.origins > 1) { put(' from '); num(h.origins); put(' countries'); }
   put(' reach '); num(h.clusters);
   put(h.clusters === 1 ? ' audience.' : ' audiences.');
-  wrap.appendChild(line);
-
-  wrap.appendChild(el('p', 'verdict-sub', h.duplicate_slots > 0
-    ? `${h.duplicate_slots} of the ${h.films} slots pay for an audience the `
-      + `lineup already has. The largest group takes ${h.largest_cluster}.`
-    : 'Every slot reaches a group no other slot reaches.'));
-  return wrap;
+  return line;
 }
 
 function filmNode(f) {
@@ -169,8 +158,12 @@ function filmNode(f) {
   return n;
 }
 
-function columnHead(count) {
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const letterFor = (i) => LETTERS[i] || String(i + 1);
+
+function columnHead(count, index) {
   const h = el('div', 'column-head');
+  if (index != null) h.appendChild(el('span', 'column-letter', letterFor(index)));
   h.appendChild(el('span', 'column-size', String(count)));
   h.appendChild(document.createTextNode(' '));
   h.appendChild(el('span', 'column-what',
@@ -180,7 +173,7 @@ function columnHead(count) {
 }
 
 function board(d, ui) {
-  const { cols, spend, svg, legend } = ui;
+  const { cols, spend, legend } = ui;
   const byTitle = Object.fromEntries(d.films.map((f) => [f.title, f]));
   const nodes = new Map();
 
@@ -195,21 +188,20 @@ function board(d, ui) {
     const head = el('div', 'spend-head');
     head.appendChild(el('h4', null, 'If you need to free a slot'));
     head.appendChild(el('p', null,
-      'In each group, these two films reach the same people. Drop either one '
-      + 'and you still cover that audience.'));
+      'These pairs overlap more than any others in their group. Drop either '
+      + 'one and the group still covers its audience.'));
     spend.appendChild(head);
 
-    const rows = el('div', 'spend-rows');
-    d.clusters.forEach((c) => {
-      const cell = el('div', 'spend-cell');
-      cell.style.flex = weight(c.films.length);
-      if (c.films.length >= 3) {
-        const pairs = d.tightest.filter((t) => t.cluster === c.index).slice(0, 3);
-        const ul = el('ul');
-        pairs.forEach((t) => ul.appendChild(el('li', null, `${t.a} or ${t.b}`)));
-        if (pairs.length) cell.appendChild(ul);
-      }
-      rows.appendChild(cell);
+    const rows = el('ul', 'spend-rows');
+    d.clusters.forEach((c, i) => {
+      if (c.films.length < 3) return;
+      const pairs = d.tightest.filter((t) => t.cluster === c.index).slice(0, 3);
+      pairs.forEach((t) => {
+        const li = el('li');
+        li.appendChild(el('span', 'spend-letter', letterFor(i)));
+        li.appendChild(document.createTextNode(`${t.a} or ${t.b}`));
+        rows.appendChild(li);
+      });
     });
     spend.appendChild(rows);
   };
@@ -218,26 +210,31 @@ function board(d, ui) {
     cols.textContent = '';
     d.clusters.forEach((c, i) => {
       const col = el('div', 'column');
-      col.style.flex = weight(c.films.length);
-      col.appendChild(columnHead(c.films.length));
+      col.appendChild(columnHead(c.films.length, i));
       c.films.slice()
         .sort((a, b) => byTitle[b].isolation - byTitle[a].isolation)
         .forEach((t) => col.appendChild(nodes.get(t) || filmNode(byTitle[t])));
       cols.appendChild(col);
     });
     spendBand();
+    if (ui.sizes) {
+      ui.sizes.textContent = '';
+      d.clusters.forEach((c) => {
+        const bar = el('span');
+        bar.style.flex = String(c.films.length);
+        ui.sizes.appendChild(bar);
+      });
+    }
     legendText(d, legend);
   };
 
   if (reduced) {
     settle();
     if (ui.onSettle) ui.onSettle();
-    requestAnimationFrame(() => threads(d, ui));
     return;
   }
 
   const first = el('div', 'column');
-  first.style.flex = weight(d.films.length);
   const head = el('div', 'column-head');
   head.appendChild(el('span', 'column-size', String(d.films.length)));
   head.appendChild(document.createTextNode(' '));
@@ -268,103 +265,57 @@ function board(d, ui) {
         { duration: 780, easing: 'cubic-bezier(.22,.9,.3,1)', fill: 'both' },
       ));
     });
-    const done = () => {
-      if (ui.onSettle) ui.onSettle();
-      requestAnimationFrame(() => threads(d, ui));
-    };
+    const done = () => { if (ui.onSettle) ui.onSettle(); };
     Promise.all(moving.map((a) => a.finished)).then(done).catch(done);
   }, 0.15);
 }
 
-function legendText(d, node) {
-  node.textContent = '';
-  const st = d.stability;
-  if (st && st.ari != null) {
-    const shaky = (st.clusters || []).filter(
-      (c) => c.lift != null && c.lift < 0.25);
-    node.appendChild(el('b', null, 'Drop any one film'));
-    node.appendChild(document.createTextNode(
-      `, re-rank the rest, re-choose the number of groups, and these come `
-      + `back: ARI ${st.ari.toFixed(2)} over ${st.runs} runs, each group `
-      + `measured against what a group its size scores on shuffled ranks. `));
-    if (shaky.length) {
-      node.appendChild(document.createTextNode(
-        `${shaky.length === 1 ? 'One group of ' : 'Groups of '}`
-        + `${shaky.map((c) => c.size).join(' and ')} `
-        + `${shaky.length === 1 ? 'holds' : 'hold'} less firmly than the rest. `));
-    }
-  }
-  const total = d.clusters.length;
-  const say = (t) => node.appendChild(document.createTextNode(t));
-
-  if (d.bridges.length) {
-    const b = d.bridges[0];
-    node.appendChild(el('b', null, b.film));
-    say(b.connects.length >= total
-      ? ` is the only route between the groups. Cut it and the programme becomes `
-        + `${total} separate evenings. `
-      : ` links ${b.connects.length} of the ${total} groups; the rest were never `
-        + 'joined. ');
-  } else {
-    say(`Nothing joins the groups: ${total} separate evenings sharing a venue. `);
-  }
-
-  const lost = losses(d);
-  if (lost) say(lost + ' ');
-  if (d.films.some((f) => f.coverage < 0.5)) {
-    say('Faded titles had less affinity data to place them.');
-  }
+function nameList(items) {
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
 
-function threads(d, { cols, svg }) {
-  svg.innerHTML = '';
-  if (!d.bridges || !d.bridges.length) return;
-  if (window.matchMedia('(max-width: 760px)').matches) return;
+function legendText(d, node) {
+  node.textContent = '';
+  const line = (text) => node.appendChild(el('p', null, text));
 
-  const box = svg.getBoundingClientRect();
-  const find = (t) => cols.querySelector(`.film[data-title="${CSS.escape(t)}"]`);
+  const bridges = (d.bridges || []).map((b) => b.film);
+  if (bridges.length === 1) {
+    const b = d.bridges[0];
+    line(`${b.film} is a bridge. It links ${b.connects.length} of the `
+      + `${d.clusters.length} groups.`);
+  } else if (bridges.length > 1) {
+    line(`${nameList(bridges)} are bridges. Each links groups that would `
+      + 'otherwise be separate.');
+  }
 
-  d.bridges.slice(0, 1).forEach((b) => {
-    const src = find(b.film);
-    if (!src) return;
-    const s = src.getBoundingClientRect();
-    const x1 = s.left - box.left + s.width;
-    const y1 = s.top - box.top + s.height / 2;
-    const done = new Set();
+  const alone = d.films.filter((f) => f.role === 'alone').map((f) => f.title);
+  if (alone.length === 1) {
+    line(`${alone[0]} is an outlier. It is weakly tied to its group and `
+      + 'covers taste nothing else here covers.');
+  } else if (alone.length > 1) {
+    line(`${nameList(alone)} are outliers. Each is weakly tied to its group `
+      + 'and covers taste nothing else here covers.');
+  }
 
-    (b.via || []).forEach((t) => {
-      const node = find(t);
-      if (!node) return;
-      const cluster = d.clusters.find((c) => c.films.includes(t));
-      if (!cluster || done.has(cluster.index)) return;
-      done.add(cluster.index);
-
-      const e = node.getBoundingClientRect();
-      const x2 = e.left - box.left;
-      const y2 = e.top - box.top + e.height / 2;
-      const mx = (x1 + x2) / 2;
-      const shape = `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
-      const under = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      under.setAttribute('class', 'under');
-      under.setAttribute('d', shape);
-      svg.appendChild(under);
-      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      p.setAttribute('d', shape);
-      svg.appendChild(p);
-      const len = p.getTotalLength();
-      p.style.setProperty('--len', len);
-      under.style.setProperty('--len', len);
-    });
-  });
+  const gone = (d.excluded || []).concat(d.unresolved || []);
+  if (gone.length === 1) {
+    line(`${gone[0]} is in this lineup but Qloo has no affinity data linking `
+      + 'it to the others, so it is not shown.');
+  } else if (gone.length > 1) {
+    line(`${nameList(gone)} are in this lineup but Qloo has no affinity data `
+      + 'linking them to the others, so they are not shown.');
+  }
 }
 
 function controlFigure(d, host) {
   host.textContent = '';
   const cols = el('div', 'columns tight');
   d.clusters.slice().sort((a, b) => b.films.length - a.films.length)
-    .forEach((c) => {
+    .forEach((c, i) => {
       const col = el('div', 'column');
-      col.appendChild(columnHead(c.films.length));
+      col.appendChild(columnHead(c.films.length, i));
       c.films.slice().sort().forEach((t) => {
         const row = el('span', 'film');
         row.appendChild(document.createTextNode(t));
@@ -373,6 +324,13 @@ function controlFigure(d, host) {
       cols.appendChild(col);
     });
   host.appendChild(cols);
+}
+
+function titled(label, node) {
+  const wrap = el('div', 'figure-block');
+  if (label) wrap.appendChild(el('p', 'figure-label', label));
+  wrap.appendChild(node);
+  return wrap;
 }
 
 function mlTables(ml, which) {
@@ -393,8 +351,15 @@ function mlTables(ml, which) {
     return bt;
   }
   const t = el('table', 'pairs');
-  const head = (label) => {
+  const headRow = () => {
     const tr = el('tr', 'head');
+    ['Distance', 'Pair', 'Agreement', 'Rated both'].forEach((label, i) => {
+      tr.appendChild(el('td', i === 0 ? 'd' : i === 1 ? '' : 'r', label));
+    });
+    t.appendChild(tr);
+  };
+  const band = (label) => {
+    const tr = el('tr', 'band');
     const td = el('td', null, label);
     td.colSpan = 4;
     tr.appendChild(td);
@@ -403,19 +368,26 @@ function mlTables(ml, which) {
   const row = (p) => {
     const tr = el('tr');
     tr.appendChild(el('td', 'd', p.distance.toFixed(2)));
-    tr.appendChild(el('td', null, `${p.a} / ${p.b}`));
-    tr.appendChild(el('td', 'r', p.r.toFixed(2)));
-    tr.appendChild(el('td', 'n', `${p.n.toLocaleString()} rated both`));
+    tr.appendChild(el('td', 'pair', `${p.a} / ${p.b}`));
+    tr.appendChild(el('td', 'r strong', p.r.toFixed(2)));
+    tr.appendChild(el('td', 'n', p.n.toLocaleString()));
     t.appendChild(tr);
   };
-  head('Slate distance \u2502 agreement \u2502 rated both');
+  headRow();
+  band('Closest by Slate');
   ml.closest.forEach(row);
+  band('Furthest by Slate');
   ml.furthest.forEach(row);
   return t;
 }
 
 function stabilityTable(st) {
   const t = el('table', 'bars-table');
+  const head = el('tr', 'head');
+  ['Group', 'Held', 'By chance', 'The gap'].forEach((label, i) => {
+    head.appendChild(el('td', i === 0 ? 'who' : 'd', label));
+  });
+  t.appendChild(head);
   const scored = st.clusters.filter((c) => c.lift != null);
   const widest = Math.max(...scored.map((c) => c.lift), 0.01);
   scored.forEach((c) => {
@@ -468,9 +440,16 @@ async function tests() {
     h.appendChild(document.createTextNode(question));
     art.appendChild(h);
     host.appendChild(art);
+    art.rail = art;
+    art.aside = art;
+    art.after = art;
     return art;
   };
-  const say = (art, text, cls) => art.appendChild(el('p', cls || null, text));
+
+  const say = (art, text, cls) =>
+    (art.rail || art).appendChild(el('p', cls || null, text));
+  const below = (art, text, cls) =>
+    (art.after || art).appendChild(el('p', cls || null, text));
 
   try {
     if (control) {
@@ -479,12 +458,12 @@ async function tests() {
       + 'given to Slate as one lineup. Every one of them carries the same '
       + 'genre tag. If Slate were grouping by genre, they would all come back '
       + 'as one audience.');
-    const fig = el('div');
+    const fig = el('div', 'control-figure');
     controlFigure(control, fig);
     art.appendChild(fig);
-    say(art, `They come back as ${spell(control.clusters.length)}. So Slate is `
-      + 'not grouping by genre: it is reading something the genre tag does not '
-      + 'contain.', 'closing-line');
+    below(art, `They come back as ${spell(control.clusters.length)}. So Slate `
+      + 'is not grouping by genre: it is reading something the genre tag does '
+      + 'not contain.', 'closing-line');
   }
 
   if (v && v.movielens) {
@@ -500,12 +479,12 @@ async function tests() {
     say(art, 'For each pair in the science fiction lineup, Slate then found '
       + 'every MovieLens user who had rated both films and measured how '
       + 'closely their two sets of scores moved together (Pearson).');
-    art.appendChild(mlTables(ml, 'pairs'));
-    say(art, 'The further apart Slate places two films, the less the people '
+    art.appendChild(titled(null, mlTables(ml, 'pairs')));
+    below(art, 'The further apart Slate places two films, the less the people '
       + `who saw both agreed about them. Across all ${ml.pairs} pairs, that `
       + `relationship measures ${ml.rho.toFixed(3)} (Spearman). This is shown `
       + 'in a dataset Qloo never touched.');
-    say(art, 'Hence the groups Slate makes match how people actually behave.',
+    below(art, 'Hence the groups Slate makes match how people actually behave.',
       'closing-line');
 
     const art2 = test('2b', 'Could metadata make the same groups Slate does?');
@@ -527,18 +506,19 @@ async function tests() {
         li.appendChild(document.createTextNode(`: ${t}`));
         ul.appendChild(li);
       });
-    art2.appendChild(ul);
+    art2.rail.appendChild(ul);
     say(art2, 'Genre and release year come from MovieLens itself. Popularity '
       + 'comes from Qloo.');
     say(art2, 'For each measure, Slate correlated it against the agreement '
       + `numbers across all ${ml.pairs} pairs. A number near zero means that `
       + 'measure tells you nothing about whether two films\u2019 viewers '
       + 'agreed. The further from zero, the more it tells you.');
-    art2.appendChild(mlTables(ml, 'baselines'));
-    say(art2, `Next to Slate\u2019s ${ml.rho.toFixed(3)}, the other three sit `
-      + 'near zero. Slate\u2019s distance tells you far more about whether two '
-      + 'films\u2019 viewers agreed than any of them.');
-    say(art2, 'Hence metadata cannot make these groups. Slate is reading '
+    art2.appendChild(titled('Correlated against the same agreement numbers',
+      mlTables(ml, 'baselines')));
+    below(art2, `Next to Slate\u2019s ${ml.rho.toFixed(3)}, the other three `
+      + 'sit near zero. Slate\u2019s distance tells you far more about whether '
+      + 'two films\u2019 viewers agreed than any of them.');
+    below(art2, 'Hence metadata cannot make these groups. Slate is reading '
       + 'something it does not contain.', 'closing-line');
   }
 
@@ -558,7 +538,10 @@ async function tests() {
       + 'grouping against the original). It runs from 0 to 1. A score of 1.00 '
       + 'means identical, above 0.8 means largely intact, and 0.6 to 0.8 '
       + 'means mostly intact with some films moving.');
-    if (v && v.lineup_ari) art.appendChild(ariTable(v.lineup_ari));
+    if (v && v.lineup_ari) {
+      art.appendChild(titled('Adjusted Rand index, by lineup',
+        ariTable(v.lineup_ari)));
+    }
     say(art, 'Each group is also checked on its own with Jaccard: of the '
       + 'films that were in that group, how many are still together '
       + 'afterwards.');
@@ -567,14 +550,15 @@ async function tests() {
       + 'film and re-clusters, and for each group counts how many of its '
       + 'films are still together: two of two is 1.00, three of four is 0.75. '
       + 'The scores are averaged over all the runs.');
-    art.appendChild(stabilityTable(st));
-    say(art, 'The effect is most visible on small groups. If a group has only '
-      + 'two films and you remove one, the pair is gone, so Jaccard always '
-      + 'scores it badly however real it was. On shuffled rankings a pair '
-      + 'gets about 0.44. A real pair scoring 0.69 is above that, and the gap '
-      + 'is what counts.');
-    say(art, 'Hence, based on the results shown, the groups do not depend on '
-      + 'any one film being in the lineup.', 'closing-line');
+    art.appendChild(titled('Each group on its own, science fiction lineup',
+      stabilityTable(st)));
+    below(art, 'The effect is most visible on small groups. If a group has '
+      + 'only two films and you remove one, the pair is gone, so Jaccard '
+      + 'always scores it badly however real it was. On shuffled rankings a '
+      + 'pair gets about 0.44. A real pair scoring 0.69 is above that, and '
+      + 'the gap is what counts.');
+    below(art, 'Hence, based on the results shown, the groups do not depend '
+      + 'on any one film being in the lineup.', 'closing-line');
   }
 
   if (v && v.bridge && v.bridge.rows && v.bridge.rows.length) {
@@ -596,17 +580,18 @@ async function tests() {
       li.appendChild(document.createTextNode(`: ${t}`));
       ul.appendChild(li);
     });
-    art.appendChild(ul);
+    art.rail.appendChild(ul);
     say(art, 'If betweenness is really popularity in disguise, the two should '
       + 'rise and fall together in every lineup. Each number below is the '
       + 'correlation between them across all the films in that lineup '
       + '(Spearman):');
-    art.appendChild(bridgeTable(b));
-    say(art, 'They do not. Two lineups go one way, two the other, and across '
-      + `all ${b.films} films the relationship is nothing. In the science `
-      + 'fiction lineup it runs strongly negative, which means the least '
-      + 'popular films carry the most routes.');
-    say(art, 'High betweenness alone is not enough to be called a bridge. '
+    art.appendChild(titled('Betweenness against popularity, by lineup',
+      bridgeTable(b)));
+    below(art, 'They do not. Two lineups go one way, two the other, and '
+      + `across all ${b.films} films the relationship is nothing. In the `
+      + 'science fiction lineup it runs strongly negative, which means the '
+      + 'least popular films carry the most routes.');
+    below(art, 'High betweenness alone is not enough to be called a bridge. '
       + 'Slate builds the graph three times, connecting each film to its 2, 3 '
       + 'and 4 nearest, and a film only qualifies if it stays in the top '
       + 'three every time. A film that leads on one setting and falls away on '
@@ -623,9 +608,9 @@ async function tests() {
         + 'all of the 2, 3 and 4 nearest settings. '));
       p.appendChild(el('i', null, b.caught.bridges[0]));
       p.appendChild(document.createTextNode(' did, and was named instead.'));
-      art.appendChild(p);
+      art.after.appendChild(p);
     }
-    say(art, 'Hence a bridge is not the most popular film wearing a label.',
+    below(art, 'Hence a bridge is not the most popular film wearing a label.',
       'closing-line');
   }
 
@@ -681,6 +666,7 @@ function panel(host, source, baseFilms) {
   host.append(say, fig, foot);
 
   const fewer = el('div', 'panel-fewer');
+  fewer.hidden = true;
   fewer.appendChild(el('h3', null, 'Fit it into fewer slots'));
   fewer.appendChild(el('p', 'lede',
     'If you only have room for some of these, Slate picks the set that '
@@ -739,11 +725,14 @@ function panel(host, source, baseFilms) {
       });
 
       say.textContent = (d.diff && d.diff.line) || '';
+      fewer.hidden = false;
       fig.textContent = '';
       const sec = chapter(d, null);
       sec.classList.add('shown');
       const head = sec.querySelector('.chapter-title');
       if (head) head.remove();
+      const vline = sec.querySelector('.verdict-line');
+      if (vline) vline.remove();
       const spend = sec.querySelector('.spend');
       if (spend) spend.remove();
       fig.appendChild(sec);

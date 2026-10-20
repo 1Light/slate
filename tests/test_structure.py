@@ -321,7 +321,8 @@ def test_the_probe_calls_the_engine():
 
 def test_the_hero_says_what_slate_is_before_showing_a_case():
     html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
-    opening = html[html.index('class="opening"'):html.index("</section>", html.index('class="opening"'))]
+    at = html.index('class="opening')
+    opening = html[at:html.index("</section>", at)]
     for word in ("films", "music", "books", "podcasts", "television"):
         assert word in opening, word
     assert "Try it" in opening
@@ -383,7 +384,7 @@ def test_an_outlier_is_not_called_a_unique_audience():
 def test_the_free_a_slot_block_says_what_dropping_costs():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     assert "If you need to free a slot" in js
-    assert "you still cover that audience" in js
+    assert "the group still covers its audience" in js
 
 
 def test_the_verdict_line_drops_the_bridge_clause():
@@ -408,8 +409,8 @@ def test_the_three_festivals_are_shown_the_same_way():
 
 def test_the_outlier_has_its_own_colour():
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
-    assert "--alone:" in css
-    assert ".film.alone { border-left-color: var(--alone); }" in css
+    assert "--alone:" in css and "--alone-on:" in css
+    assert ".film.alone { border-left-color: var(--alone-on); }" in css
 
 
 def test_the_header_links_to_every_section():
@@ -574,3 +575,204 @@ def test_every_helper_the_evidence_uses_exists():
                         "columnHead", "controlFigure", "mlTables",
                         "stabilityTable", "bridgeTable", "ariTable", "spell",
                         "Caps", "show"), name
+
+
+def test_the_page_has_a_maximum_width():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert "--page:" in css
+    assert ".band { max-width: var(--page)" in css
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    for section in ("opening", "group-head", "views", "checked", "invite"):
+        assert f'class="{section} band' in html or f'class="{section}' in html
+
+
+def test_every_heading_has_a_size():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    for sel in (".views h2", ".checked h2", ".invite h2", ".group-head h2"):
+        assert sel in css, sel
+    block = css[css.index(".panel-box h3"):css.index(".panel-box .lede")]
+    assert "font-size: 1.5rem" in block
+
+
+def test_group_columns_are_equal_width():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "weight(" not in js
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".sizes span" in css
+
+
+def test_the_spacing_is_a_scale():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    for token in ("--s1:", "--s2:", "--s3:", "--s4:"):
+        assert token in css, token
+
+
+def test_the_loading_indicator_is_gone():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "Reading the programmes" not in html
+    assert "Nothing is stored" not in html
+    assert "$('loading')" not in js
+
+
+def test_the_fewer_slots_block_waits_to_be_used():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("function panel("):js.index("async function viewTabs(")]
+    assert "fewer.hidden = true" in block
+    assert "fewer.hidden = false" in block
+
+
+def test_nothing_is_smaller_than_twelve_pixels():
+    import re
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    for size in re.findall(r"font-size:\s*([0-9.]+)rem", css):
+        assert float(size) >= 0.75, f"{size}rem is under 12px"
+
+
+def test_the_slot_heading_is_a_heading():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    block = css[css.index(".spend-head h4"):css.index(".spend-head p")]
+    assert "var(--serif)" in block
+    assert "1.5rem" in block
+    assert "text-align: center" in css[css.index(".spend-head {"):css.index(".spend-head h4")]
+
+
+def test_the_test_number_is_as_large_as_the_text():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    block = css[css.index(".test h3 .num {"):css.index("}", css.index(".test h3 .num {"))]
+    assert "0.875rem" in block
+    assert "border-radius: 50%" in block
+
+
+def test_the_evidence_reads_in_one_column():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("async function tests()"):js.index("function ariTable(")]
+    assert "const body = el('div', 'split')" not in block
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".test .split" not in css
+    assert "max-width: 68ch" in css
+
+
+def test_every_table_says_what_its_columns_are():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    pairs = js[js.index("const t = el('table', 'pairs')"):js.index("function stabilityTable(")]
+    for label in ("Distance", "Pair", "Agreement", "Rated both"):
+        assert f"'{label}'" in pairs, label
+    assert "rated both`" not in pairs
+    stab = js[js.index("function stabilityTable("):js.index("function bridgeTable(")]
+    for label in ("Group", "Held", "By chance", "The gap"):
+        assert f"'{label}'" in stab, label
+
+
+def test_the_closest_and_furthest_pairs_are_separated():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "band('Closest by Slate')" in js
+    assert "band('Furthest by Slate')" in js
+
+
+def test_stacked_tables_are_labelled():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "function titled(" in js
+    block = js[js.index("async function tests()"):js.index("function ariTable(")]
+    assert "titled('Adjusted Rand index, by lineup'" in block
+    assert "titled('Each group on its own" in block
+
+
+def test_the_try_it_box_is_a_centred_card():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    assert 'class="invite-card"' in html
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    block = css[css.index(".invite-card {"):css.index("}", css.index(".invite-card {"))]
+    assert "margin: var(--s3) auto 0" in block
+    assert "border-radius" in block
+
+
+def test_groups_are_lettered_and_the_pairs_say_which():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "const letterFor" in js
+    assert "columnHead(c.films.length, i)" in js
+    block = js[js.index("const spendBand"):js.index("const settle")]
+    assert "spend-letter" in block
+    assert "letterFor(i)" in block
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".column-letter" in css and ".spend-letter" in css
+
+
+def test_the_conclusion_comes_after_the_evidence():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("async function tests()"):js.index("function ariTable(")]
+    assert "const below = (art, text, cls)" in block
+    assert "art.after" in block
+    for line in ("Hence the groups Slate makes match",
+                 "Hence metadata cannot make these groups",
+                 "Hence, based on the results shown",
+                 "Hence a bridge is not the most popular"):
+        at = block.index(line)
+        before = block[:at]
+        assert before.rstrip().endswith("'") or "below(art" in before[-400:], line
+
+
+def test_no_function_is_called_before_it_exists():
+    import shutil
+    import subprocess
+    root = Path(__file__).resolve().parent.parent
+    node = shutil.which("node")
+    if not node:
+        src = (root / "static" / "app.js").read_text()
+        for name in ("losses", "controlFigure", "mlTables", "stabilityTable",
+                     "bridgeTable", "ariTable", "letterFor", "columnHead",
+                     "legendText", "panel", "chapter", "failure", "status"):
+            assert f"function {name}(" in src or f"const {name} =" in src, name
+        return
+    done = subprocess.run([node, "scripts/check_js.js"], cwd=root,
+                          capture_output=True, text=True)
+    assert done.returncode == 0, done.stdout + done.stderr
+
+
+def test_the_control_figure_letters_its_groups():
+    src = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = src[src.index("function controlFigure("):src.index("function mlTables(")]
+    assert ".forEach((c, i) =>" in block
+
+
+def test_the_legend_is_three_facts_and_nothing_else():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("function legendText("):js.index("function threads(")
+              if "function threads(" in js else js.index("function legendText(") + 2000]
+    assert "is a bridge. It links" in block
+    assert "is an outlier. It is weakly tied" in block
+    assert "no affinity data linking" in block
+    for gone in ("ARI", "shuffled ranks", "separate evenings", "Faded titles"):
+        assert gone not in block, gone
+
+
+def test_the_bridge_threads_are_gone():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "function threads(" not in js
+    assert "'threads'" not in js
+
+
+def test_the_verdict_has_no_slot_claim():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "pay for an audience" not in js
+    assert "verdict-sub" not in js
+    assert "duplicate_slots" not in js
+
+
+def test_the_festival_name_is_a_title():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    block = css[css.index(".chapter-title .where"):css.index("}", css.index(".chapter-title .where"))]
+    assert "var(--serif)" in block
+    assert "var(--ink)" in block
+
+
+def test_tags_are_bordered():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    block = css[css.index(".film .tag {"):css.index("}", css.index(".film .tag {"))]
+    assert "border: 1px solid" in block
+
+
+def test_the_back_to_top_is_filled():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    block = css[css.index(".to-top {"):css.index("}", css.index(".to-top {"))]
+    assert "background: var(--ink)" in block
