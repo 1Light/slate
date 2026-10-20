@@ -68,6 +68,7 @@ const SPELL = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
   'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty',
   'twenty-one', 'twenty-two', 'twenty-three', 'twenty-four'];
 const spell = (n) => SPELL[n] || String(n);
+const Caps = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 
 async function start() {
   let list;
@@ -458,7 +459,9 @@ async function tests() {
   if (!host) return;
   host.textContent = '';
 
+  let built = 0;
   const test = (n, question) => {
+    built += 1;
     const art = el('article', 'test');
     const h = el('h3');
     h.appendChild(el('span', 'num', String(n)));
@@ -469,7 +472,8 @@ async function tests() {
   };
   const say = (art, text, cls) => art.appendChild(el('p', cls || null, text));
 
-  if (control) {
+  try {
+    if (control) {
     const art = test(1, 'Does Slate just group by genre?');
     say(art, `${Caps(spell(control.films.length))} science fiction films were `
       + 'given to Slate as one lineup. Every one of them carries the same '
@@ -625,7 +629,15 @@ async function tests() {
       'closing-line');
   }
 
-  const sec = $('checked');
+  } catch (e) {
+    console.error('evidence section', e);
+  }
+
+  if (built) show($('checked'));
+}
+
+function show(sec) {
+  if (!sec) return;
   sec.hidden = false;
   onceVisible(sec, () => sec.classList.add('shown'), 0.05);
 }
@@ -665,6 +677,7 @@ function panel(host, source, baseFilms) {
   const say = el('p', 'panel-diff');
   const fig = el('div', 'panel-figure');
   const foot = el('p', 'panel-foot');
+  say.hidden = true;
   host.append(say, fig, foot);
 
   const fewer = el('div', 'panel-fewer');
@@ -711,6 +724,7 @@ function panel(host, source, baseFilms) {
 
   const run = async () => {
     say.textContent = 'Working it out';
+    say.hidden = false;
     fig.textContent = '';
     try {
       const body = { drop: state.drop, add: state.add };
@@ -730,6 +744,8 @@ function panel(host, source, baseFilms) {
       sec.classList.add('shown');
       const head = sec.querySelector('.chapter-title');
       if (head) head.remove();
+      const spend = sec.querySelector('.spend');
+      if (spend) spend.remove();
       fig.appendChild(sec);
 
       foot.textContent = '';
@@ -770,7 +786,6 @@ function panel(host, source, baseFilms) {
 
   drawChips();
   drawSizes(baseFilms.length);
-  run();
 }
 
 async function viewTabs() {

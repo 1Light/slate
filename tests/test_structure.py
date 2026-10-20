@@ -529,3 +529,48 @@ def test_the_panel_appears_under_sundance_and_under_your_own_slate():
 def test_the_panel_can_be_reset():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     assert "Reset to the real lineup" in js
+
+
+def test_the_panel_shows_nothing_until_asked():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("function panel("):js.index("async function viewTabs(")]
+    tail = block[block.rindex("  drawChips();"):]
+    assert "run();" not in tail
+
+
+def test_the_panel_does_not_repeat_the_slot_advice():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("function panel("):js.index("async function viewTabs(")]
+    assert "spend.remove()" in block
+
+
+def test_one_broken_test_does_not_hide_the_evidence():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("async function tests()"):js.index("function ariTable(")]
+    assert "catch (e)" in block
+    assert "if (built) show(" in block
+
+
+def test_every_helper_the_evidence_uses_exists():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("async function tests()"):js.index("function ariTable(")]
+    import re
+    for name in set(re.findall(r"\b([A-Za-z_][A-Za-z0-9_]*)\(", block)):
+        if name in ("if", "for", "while", "catch", "switch", "function",
+                    "return", "typeof", "Math", "Number", "String", "Object"):
+            continue
+        if f"function {name}(" in js or f"const {name} =" in js \
+           or f"{name} = (" in js or f"let {name} " in js:
+            continue
+        assert name in ("ask", "el", "say", "test", "push", "join", "map",
+                        "filter", "split", "index", "indexOf", "toFixed",
+                        "appendChild", "createTextNode", "toLocaleString",
+                        "forEach", "slice", "sort", "charAt", "toUpperCase",
+                        "concat", "trim", "includes", "replace", "remove",
+                        "querySelector", "add", "append", "max", "min",
+                        "round", "abs", "fetch", "JSON", "console", "error",
+                        "log", "stringify", "parse", "classList", "textContent",
+                        "setAttribute", "onceVisible", "failure", "chapter",
+                        "columnHead", "controlFigure", "mlTables",
+                        "stabilityTable", "bridgeTable", "ariTable", "spell",
+                        "Caps", "show"), name
