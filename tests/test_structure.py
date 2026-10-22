@@ -524,7 +524,7 @@ def test_the_change_line_is_computed_from_both_partitions():
 def test_the_panel_appears_under_sundance_and_under_your_own_slate():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     assert "panel(hook, { slug: item.slug }" in js
-    assert "panel(hook, { films }" in js
+    assert "panel(hook, { films, entity_type: d.entity_type }" in js
 
 
 def test_the_panel_can_be_reset():
@@ -1010,3 +1010,169 @@ def test_additions_are_marked_not_listed():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     block = js[js.index("function panel("):js.index("async function viewTabs(")]
     assert "`Added: " not in block
+
+
+def test_a_lineup_that_does_not_separate_is_one_group():
+    src = (Path(__file__).resolve().parent.parent / "app" / "structure.py").read_text()
+    assert "WEAK_SEPARATION = 0.3" in src
+    block = src[src.index("pick = _choose_k(matrix, films, merges)"):src.index("clusters = _cut_to(films, merges, groups)")]
+    assert "groups = 1 if weak" in block
+
+
+def test_the_weak_case_says_so_and_shows_nothing_else():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "are too alike to " in js
+    board = js[js.index("const spendBand"):js.index("const settle")]
+    assert "if (d.weak) { spend.textContent = ''; return; }" in board
+    v = js[js.index("function verdict(d)"):js.index("function filmNode(")]
+    assert "do not separate." in v
+
+
+def test_the_figures_say_group_not_audience():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    head = js[js.index("function columnHead("):js.index("function board(")]
+    assert "audience group" not in head
+    v = js[js.index("function verdict(d)"):js.index("function filmNode(")]
+    assert "separate into " in v
+    assert "audiences." not in v
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    diff = src[src.index("def _diff("):src.index("def _reaches(")]
+    assert "audience" not in diff
+
+
+def test_the_evidence_explains_what_a_group_is():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "Does a group mean a fixed audience?" in js
+    assert "there is no universal grouping to belong to" in js
+    assert "not a universally fixed " in js
+
+
+def test_the_agent_speaks_the_pages_language():
+    src = (Path(__file__).resolve().parent.parent / "app" / "agent.py").read_text()
+    page = src[:src.index('"You advise a film festival programmer')] \
+        + src[src.index('"certainty about real audiences."') + 33:]
+    assert "audiences" not in page
+    assert "programme " not in page
+
+
+def test_a_rejection_says_what_actually_happened():
+    src = (Path(__file__).resolve().parent.parent / "app" / "agent.py").read_text()
+    block = src[src.index("was = analysis.headline"):src.index("continue", src.index("was = analysis.headline"))]
+    assert "if now <= was else" in block
+    assert "splitting an " in block
+    assert "landed inside a group the lineup already covers" in block
+
+
+def test_the_nearest_miss_is_shown_first():
+    src = (Path(__file__).resolve().parent.parent / "app" / "agent.py").read_text()
+    assert 'rejected.sort(key=lambda r: -r.get("gain"' in src
+    assert '"gain": round(gain, 6)' in src
+
+
+def test_editing_a_lineup_keeps_its_type():
+    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    block = src[src.index("def panel("):src.index("extra = _films_from_lines")]
+    assert 'entity_type = "urn:entity:movie"' not in block
+    assert "req.entity_type if req.entity_type in ENTITY_LABEL" in block
+    model = src[src.index("class PanelRequest"):src.index("@app.post(\"/api/panel\")")]
+    assert "entity_type: str | None = None" in model
+
+
+def test_the_panel_result_reports_its_own_type():
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    block = src[src.index("def _shape_from("):src.index("def _best_subset_fast(")]
+    assert 'shape["entity_type"] = entity_type' in block
+    assert '"reading"] = "films"' not in block
+    assert 'ENTITY_NOUN.get(entity_type' in block
+
+
+def test_the_page_sends_the_type_back():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "panel(hook, { films, entity_type: d.entity_type }" in js
+    block = js[js.index("const run = async (opts)"):js.index("addBtn.onclick")]
+    assert "body.entity_type = source.entity_type" in block
+
+
+def test_titles_are_marked_inside_sentences():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "function withTitles(node, text, names)" in js
+    assert "el('i', 'work', hit)" in js
+    at = js.index("function legendText(d, node)")
+    legend = js[at:js.index("\n}\n", at)]
+    assert "withTitles(p, text, works)" in legend
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert "i.work" in css
+
+
+def test_you_can_watch_the_move_again():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "function replay(fig, was, now, moved)" in js
+    block = js[js.index("function replay("):js.index("function settleInto(")]
+    assert "chapter(was, null)" in block, "the old arrangement is redrawn"
+    assert "dataset.replaying" in block
+    assert "const TRAVEL" in block and "const EMPTY" in block
+    assert block.index("One: the rows travel") < block.index("Two: the columns") \
+        if "One: the rows travel" in block else True
+    assert "scrollIntoView" in block
+    assert "if (reduced" in block
+    panel = js[js.index("function panel("):js.index("async function viewTabs(")]
+    assert "el('button', 'ghost', 'Show what moved')" in panel
+    foot = panel[panel.index("foot.textContent = '';"):]
+    assert "Show what moved" in foot, "it belongs under the figure"
+    assert "replay(fig, was, d, moved)" in panel
+
+
+def test_the_replay_button_comes_after_the_positions_it_needs():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    panel = js[js.index("function panel("):js.index("async function viewTabs(")]
+    assert panel.index("const before = new Map();") < panel.index("Show what moved")
+
+
+def test_what_you_removed_reads_clearly():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert "--gone:" in css
+    head = css[css.index(".taken-head {"):css.index("}", css.index(".taken-head {"))]
+    assert "var(--gone)" in head
+    film = css[css.index(".taken-film {"):css.index("}", css.index(".taken-film {"))]
+    assert "var(--panel-faint)" not in film, "too dim to read on the dark panel"
+    assert "line-through" in film
+
+
+def test_the_page_is_not_white():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    block = css[css.index(":root {"):css.index("}", css.index(":root {"))]
+    paper = block[block.index("--paper:"):block.index(";", block.index("--paper:"))]
+    assert "#FFF" not in paper.upper()
+    assert "#FBFAF8" not in paper.upper()
+
+
+def test_the_replay_offers_itself_whenever_rows_travelled():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("function settleInto("):js.index("function panel(")]
+    assert "return shifted;" in block
+    assert "shifted += 1;" in block
+    panel = js[js.index("function panel("):js.index("async function viewTabs(")]
+    assert "const shifted = settleInto(fig, before, moved);" in panel
+
+
+def test_a_title_that_was_alone_counts_as_moved():
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    block = src[src.index("def _match_groups("):src.index("def _diff(")]
+    assert "kin_before != kin_after" in block
+    assert "if kin_before and" not in block, "an empty before set is still a move"
+
+
+def test_the_old_figure_survives_until_the_new_one_arrives():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    panel = js[js.index("function panel("):js.index("async function viewTabs(")]
+    head = panel[panel.index("const run = async (opts)"):panel.index("try {")]
+    assert "fig.textContent = ''" not in head, (
+        "clearing before the fetch loses the positions the replay needs")
+
+
+def test_the_run_is_not_cut_into_sections():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    block = css[css.index("#own-result .panel {"):css.index("}", css.index("#own-result .panel {"))]
+    assert "border-top: 0" in block
+    chapter = css[css.index("#own-result .chapter {"):css.index("}", css.index("#own-result .chapter {"))]
+    assert "border-top: 0" in chapter

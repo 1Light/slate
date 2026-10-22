@@ -273,8 +273,12 @@ function verdict(d) {
 
   num(h.films); put(` ${d.nouns || 'items'}`);
   if (h.origins > 1) { put(' from '); num(h.origins); put(' countries'); }
-  put(' reach '); num(h.clusters);
-  put(h.clusters === 1 ? ' audience.' : ' audiences.');
+  if (d.weak) {
+    put(' do not separate.');
+    return line;
+  }
+  put(' separate into '); num(h.clusters);
+  put(h.clusters === 1 ? ' group.' : ' groups.');
   return line;
 }
 
@@ -313,8 +317,8 @@ function columnHead(count, index, noun, nouns) {
   h.appendChild(el('span', 'column-size', String(count)));
   h.appendChild(document.createTextNode(' '));
   h.appendChild(el('span', 'column-what',
-    count === 1 ? `${noun || 'film'} · its own audience group`
-                : `${nouns || 'films'} · one audience group`));
+    count === 1 ? `${noun || 'film'} · its own group`
+                : `${nouns || 'films'} · one group`));
   return h;
 }
 
@@ -331,6 +335,7 @@ function board(d, ui) {
       && d.tightest.some((t) => t.cluster === c.index));
     if (!usable.length) return;
 
+    if (d.weak) { spend.textContent = ''; return; }
     const head = el('div', 'spend-head');
     head.appendChild(el('h4', null, 'If you need to free a slot'));
     head.appendChild(el('p', null,
@@ -441,9 +446,41 @@ function nameList(items) {
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
 
+function withTitles(node, text, names) {
+  const marks = (names || []).filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+  if (!marks.length) { node.appendChild(document.createTextNode(text)); return; }
+  let rest = text;
+  while (rest) {
+    let at = -1;
+    let hit = null;
+    marks.forEach((m) => {
+      const i = rest.indexOf(m);
+      if (i !== -1 && (at === -1 || i < at)) { at = i; hit = m; }
+    });
+    if (at === -1) { node.appendChild(document.createTextNode(rest)); return; }
+    if (at) node.appendChild(document.createTextNode(rest.slice(0, at)));
+    node.appendChild(el('i', 'work', hit));
+    rest = rest.slice(at + hit.length);
+  }
+}
+
 function legendText(d, node) {
   node.textContent = '';
-  const line = (text) => node.appendChild(el('p', null, text));
+  const works = d.films.map((f) => f.title)
+    .concat(d.excluded || [], d.unresolved || []);
+  const line = (text) => {
+    const p = el('p');
+    withTitles(p, text, works);
+    node.appendChild(p);
+  };
+
+  if (d.weak) {
+    line(`These ${d.films.length} ${d.nouns || 'items'} are too alike to `
+      + 'separate. Slate found no grouping where the lines between groups '
+      + 'meant anything.');
+    return;
+  }
 
   const bridges = (d.bridges || []).map((b) => b.film);
   if (bridges.length === 1) {
@@ -624,7 +661,7 @@ async function tests() {
     say(art, `${Caps(spell(control.films.length))} science fiction films were `
       + 'given to Slate as one lineup. Every one of them carries the same '
       + 'genre tag. If Slate were grouping by genre, they would all come back '
-      + 'as one audience.');
+      + 'as one group.');
     const fig = el('div', 'control-figure');
     controlFigure(control, fig);
     art.appendChild(fig);
@@ -781,6 +818,33 @@ async function tests() {
       'closing-line');
   }
 
+    const five = test(5, 'Does a group mean a fixed audience?');
+    say(five, 'No. Slate measures how far apart items sit within the lineup '
+      + 'you gave it, so a group is a statement about that lineup and '
+      + 'nothing more.');
+    say(five, 'Take four films that Slate put together and run them on their '
+      + 'own. They separate again. Nothing changed about the films. The '
+      + 'sixteen they were being compared against are gone, so the only '
+      + 'differences left are the ones between those four.');
+    say(five, 'This is true of taste in general. Give a person twenty films '
+      + 'and they will group them one way. Give them four and they will group '
+      + 'them another, because taste is the result of a mixture of several '
+      + 'things, like the genre, the story, the era, who is in it and much '
+      + 'else besides. So however small a lineup gets, there is always some '
+      + 'difference left to group by. This is what Slate demonstrates.');
+    say(five, 'Slate stops before that becomes meaningless. It tries every '
+      + 'possible number of groups and measures how much tighter each one '
+      + 'is: how much closer an item sits to its own group than to the '
+      + 'nearest other. This ensures Slate finds the maximum number of '
+      + 'groups where the division is most meaningful. It stops at a point '
+      + 'where dividing any further would not yield any significant '
+      + 'difference in taste between groups.');
+    say(five, 'So the question Slate answers is this: given a lineup, which '
+      + 'items overlap more in taste compared to all the others in it. It is '
+      + 'not answering which items belong to a fixed audience group, because '
+      + 'there is no universal grouping to belong to.');
+    say(five, 'Hence a group describes the lineup, not a universally fixed '
+      + 'set.', 'closing-line');
   } catch (e) {
     console.error('evidence section', e);
   }
@@ -805,8 +869,105 @@ function ariTable(rows) {
   return t;
 }
 
+function replay(fig, was, now, moved) {
+  if (reduced || !was) return;
+  const box = fig.getBoundingClientRect();
+  if (box.top < 0 || box.bottom > window.innerHeight) {
+    fig.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  if (fig.dataset.replaying) return;
+  fig.dataset.replaying = '1';
+
+  const here = fig.firstElementChild;
+  if (!here) { delete fig.dataset.replaying; return; }
+
+  const seat = (node) => {
+    const at = new Map();
+    node.querySelectorAll('.film[data-title]').forEach((row) => {
+      at.set(row.dataset.title, row.getBoundingClientRect());
+    });
+    return at;
+  };
+  const newer = seat(here);
+  const tall = fig.getBoundingClientRect().height;
+
+  const then = chapter(was, null);
+  then.classList.add('shown');
+  ['.chapter-title', '.verdict-line', '.spend'].forEach((sel) => {
+    const gone = then.querySelector(sel);
+    if (gone) gone.remove();
+  });
+  then.style.position = 'absolute';
+  then.style.inset = '0';
+  fig.style.position = 'relative';
+  fig.style.minHeight = `${tall}px`;
+  here.style.opacity = '0';
+  fig.appendChild(then);
+
+  const TRAVEL = 1500;
+  const EMPTY = 700;
+
+  requestAnimationFrame(() => {
+    const older = seat(then);
+    const mark = new Set(moved || []);
+
+    then.querySelectorAll('.film[data-title]').forEach((row) => {
+      const from = older.get(row.dataset.title);
+      const to = newer.get(row.dataset.title);
+      if (!from) return;
+      if (!to) {
+        row.animate([{ opacity: 1 }, { opacity: 0.25 }],
+          { duration: 500, delay: 300, easing: 'ease-out', fill: 'both' });
+        return;
+      }
+      const dx = to.left - from.left;
+      const dy = to.top - from.top;
+      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+      row.style.zIndex = mark.has(row.dataset.title) ? '5' : '1';
+      row.animate(
+        [{ transform: 'none' },
+         { transform: `translate(${dx}px, ${dy}px)` }],
+        { duration: mark.has(row.dataset.title) ? TRAVEL : TRAVEL * 0.7,
+          delay: mark.has(row.dataset.title) ? 250 : 120,
+          easing: 'cubic-bezier(.4,.05,.2,1)', fill: 'both' },
+      );
+    });
+
+    setTimeout(() => {
+      then.querySelectorAll('.column').forEach((col) => {
+        const kept = [...col.querySelectorAll('.film[data-title]')]
+          .filter((r) => newer.has(r.dataset.title));
+        if (kept.length) return;
+        col.animate([{ opacity: 1 }, { opacity: 0 }],
+          { duration: EMPTY, easing: 'ease-in', fill: 'both' });
+      });
+      then.querySelectorAll('.column-head, .sizes').forEach((bit) => {
+        bit.animate([{ opacity: 1 }, { opacity: 0 }],
+          { duration: EMPTY, easing: 'ease-in', fill: 'both' });
+      });
+    }, TRAVEL + 300);
+
+    setTimeout(() => {
+      here.style.opacity = '';
+      here.animate([{ opacity: 0 }, { opacity: 1 }],
+        { duration: 420, easing: 'ease-out', fill: 'both' });
+      then.animate([{ opacity: 1 }, { opacity: 0 }],
+        { duration: 420, easing: 'ease-in', fill: 'both' });
+    }, TRAVEL + 300 + EMPTY);
+
+    setTimeout(() => {
+      then.remove();
+      fig.style.minHeight = '';
+      fig.style.position = '';
+      here.style.opacity = '';
+      delete fig.dataset.replaying;
+    }, TRAVEL + 300 + EMPTY + 520);
+  });
+}
+
 function settleInto(fig, before, moved) {
-  if (!before.size || reduced) return;
+  if (!before.size || reduced) return 0;
+  let shifted = 0;
   const mark = new Set(moved);
   fig.querySelectorAll('.film[data-title]').forEach((row) => {
     const was = before.get(row.dataset.title);
@@ -819,16 +980,19 @@ function settleInto(fig, before, moved) {
     const dx = was.left - now.left;
     const dy = was.top - now.top;
     if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+    shifted += 1;
     row.animate(
       [{ transform: `translate(${dx}px, ${dy}px)` },
        { transform: 'none' }],
       { duration: mark.has(row.dataset.title) ? 640 : 460,
         easing: 'cubic-bezier(.3,.9,.3,1)', fill: 'both' });
   });
+  return shifted;
 }
 
 function panel(host, source, baseFilms) {
   const state = { drop: [], add: [], keep: null, films: baseFilms.slice() };
+  let shown = null;
   host.textContent = '';
 
   const box = el('div', 'panel-box');
@@ -927,11 +1091,13 @@ function panel(host, source, baseFilms) {
     say.textContent = '';
     say.appendChild(el('p', null, 'Working it out'));
     say.hidden = false;
-    fig.textContent = '';
     try {
       const body = { drop: state.drop, add: state.add };
       if (source.slug) body.slug = source.slug;
-      else body.films = source.films;
+      else {
+        body.films = source.films;
+        if (source.entity_type) body.entity_type = source.entity_type;
+      }
       if (state.keep) body.keep = state.keep;
       if (wantSwap) body.swap = true;
 
@@ -942,11 +1108,16 @@ function panel(host, source, baseFilms) {
       });
 
       say.textContent = '';
+      const works = d.films.map((f) => f.title)
+        .concat(d.dropped || [], d.added || []);
       ((d.diff && d.diff.line) || '').split('. ').filter(Boolean)
         .forEach((part, i, all) => {
           const dot = part.endsWith('.') ? '' : '.';
-          say.appendChild(el('p', null, part + (i === all.length - 1 ? dot : '.')));
+          const p = el('p');
+          withTitles(p, part + (i === all.length - 1 ? dot : '.'), works);
+          say.appendChild(p);
         });
+
       fewer.hidden = false;
       ask_agent.hidden = false;
 
@@ -955,6 +1126,7 @@ function panel(host, source, baseFilms) {
         before.set(row.dataset.title, row.getBoundingClientRect());
       });
       fig.textContent = '';
+
       const sec = chapter(d, null);
       sec.classList.add('shown');
       const head = sec.querySelector('.chapter-title');
@@ -964,12 +1136,24 @@ function panel(host, source, baseFilms) {
       const spend = sec.querySelector('.spend');
       if (spend) spend.remove();
       fig.appendChild(sec);
-      settleInto(fig, before, (d.diff && d.diff.moved) || []);
+      const moved = (d.diff && d.diff.moved) || [];
+
+      const shifted = settleInto(fig, before, moved);
+      const was = shown;
+      shown = d;
 
       const back = sec.querySelectorAll('.taken-film');
       back.forEach((b) => { b.onclick = () => putBack(b.textContent); });
 
       foot.textContent = '';
+
+      if (was && !reduced) {
+        const again = el('button', 'ghost', 'Show what moved');
+        again.type = 'button';
+        again.onclick = () => replay(fig, was, d, moved);
+        foot.appendChild(again);
+      }
+
       const mine = new Set(d.by_you || []);
       const theirs = (d.dropped || []).filter((t) => !mine.has(t));
       if (theirs.length) {
@@ -1003,7 +1187,7 @@ function panel(host, source, baseFilms) {
     } catch (e) {
       say.textContent = '';
       fig.textContent = '';
-      failure(e, fig, run);
+      failure(e, fig, () => run());
     }
   };
 
@@ -1060,7 +1244,7 @@ function agentCase(host, name, agent) {
     const last = agent.swaps[agent.swaps.length - 1];
     const shape = el('p', 'agent-shape');
     shape.appendChild(el('b', null, String(first.before.clusters)));
-    shape.appendChild(document.createTextNode(' audiences becomes '));
+    shape.appendChild(document.createTextNode(' groups becomes '));
     shape.appendChild(el('b', null, String(last.after.clusters)));
     shape.appendChild(document.createTextNode('. The largest group drops from '));
     shape.appendChild(el('b', null, String(first.before.largest_cluster)));
@@ -1075,8 +1259,8 @@ function agentCase(host, name, agent) {
   } else {
     box.appendChild(el('p', 'agent-shape', 'Nothing was changed.'));
     box.appendChild(el('p', 'why',
-      'Each candidate was added, the whole set re-clustered, and the result '
-      + 'measured. None reached an audience the lineup was missing.'));
+      'Each candidate was added, the whole lineup re-clustered, and the '
+      + 'result measured. None of them improved it.'));
     if (agent.rejected && agent.rejected.length) {
       box.appendChild(el('p', 'rejects-head', 'Tested and turned down'));
       const ul = el('ul', 'rejects');
@@ -1290,7 +1474,8 @@ async function runOwn() {
     out.appendChild(sec);
     const hook = el('div', 'panel');
     out.appendChild(hook);
-    panel(hook, { films }, d.films.map((f) => f.title));
+    panel(hook, { films, entity_type: d.entity_type },
+      d.films.map((f) => f.title));
     sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     stages.forEach(clearTimeout);

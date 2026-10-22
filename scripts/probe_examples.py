@@ -56,7 +56,7 @@ def main() -> int:
         alone = [i["film"] for i in a.isolated]
         ari = (a.stability or {}).get("ari")
 
-        print(f"  {len(m.films)} placed, {len(a.clusters)} audiences {sizes}")
+        print(f"  {len(m.films)} placed, {len(a.clusters)} groups {sizes}")
         if ari is not None:
             print(f"  ARI {ari:+.3f}")
         if bridges:

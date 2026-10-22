@@ -12,6 +12,7 @@ POPULAR_QUANTILE = 0.75
 NULL_ROUNDS = 12
 SINGLETON_SHARE = 0.25
 MOST_GROUPS = 0.5
+WEAK_SEPARATION = 0.3
 K_TOLERANCE = 0.03
 
 ISOLATION_TOP_N = 3
@@ -401,8 +402,13 @@ def analyse(matrix: Matrix, groups: int | None = None,
     merges = _agglomerate(matrix)
 
     pick = _choose_k(matrix, films, merges)
+
+    best = pick.get("best")
+    weak = best is not None and best < WEAK_SEPARATION
+    pick["weak"] = weak
+
     if groups is None:
-        groups = pick.get("chosen") or 2
+        groups = 1 if weak else (pick.get("chosen") or 2)
     pick["used"] = groups
     clusters = _cut_to(films, merges, groups)
     member = {t: i for i, g in enumerate(clusters) for t in g}

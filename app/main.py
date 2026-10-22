@@ -127,6 +127,7 @@ def analyse_custom(req: SlateRequest, request: Request):
 class PanelRequest(BaseModel):
     slug: str | None = None
     films: list[str] | None = None
+    entity_type: str | None = None
     swap: bool = False
     drop: list[str] = Field(default_factory=list)
     add: list[str] = Field(default_factory=list)
@@ -141,10 +142,12 @@ def panel(req: PanelRequest, request: Request):
     if req.slug:
         name, note, films, entity_type = _load_lineup(req.slug)
     elif req.films:
-        name, note, entity_type = "Your lineup", "", "urn:entity:movie"
+        name, note = "Your lineup", ""
+        entity_type = (req.entity_type if req.entity_type in ENTITY_LABEL
+                       else "urn:entity:movie")
         films = _films_from_lines(req.films)
     else:
-        raise HTTPException(422, "Give a programme or a list of titles.")
+        raise HTTPException(422, "Give a lineup or a list of titles.")
 
     extra = _films_from_lines([t for t in req.add if t.strip()])
     known = {f.title.lower() for f in films}
@@ -185,7 +188,7 @@ def panel(req: PanelRequest, request: Request):
 
         agent = to_dict(result)
         if not result.swaps:
-            shape, _a = _shape_from(name, note, small, "panel", [])
+            shape, _a = _shape_from(name, note, small, "panel", [], entity_type)
             shape["diff"] = _diff(base, shape)
             shape["added"] = []
             gone = sorted(set(m.films) - set(small.films))
@@ -211,7 +214,7 @@ def panel(req: PanelRequest, request: Request):
         shape["agent"] = agent
         return shape
 
-    shape, _a = _shape_from(name, note, small, "panel", [])
+    shape, _a = _shape_from(name, note, small, "panel", [], entity_type)
     shape["diff"] = _diff(base, shape)
     shape["added"] = [f.title for f in extra if f.title in small.films]
     gone = sorted(set(m.films) - set(small.films))

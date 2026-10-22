@@ -46,6 +46,14 @@ class AgentResult:
     after_groups: list[list[str]] = field(default_factory=list)
 
 
+ORDINALS = {1: "first", 2: "second", 3: "third", 4: "fourth", 5: "fifth",
+            6: "sixth", 7: "seventh", 8: "eighth", 9: "ninth", 10: "tenth"}
+
+
+def _ordinal(n: int) -> str:
+    return ORDINALS.get(n, f"{n}th")
+
+
 def _score(headline: dict, slate: int) -> float:
     k = headline["clusters"]
     ideal = max(2.0, slate / 3.0)
@@ -127,7 +135,7 @@ def _explain(swap: Swap, analysis_before: Analysis, slate_name: str) -> str:
     key = os.getenv("LLM_API_KEY", "").strip()
     model = os.getenv("LLM_MODEL", "").strip()
     fallback = (
-        f"Cutting {swap.out_title} costs the programme little: its audience is "
+        f"Cutting {swap.out_title} costs the lineup little: its audience is "
         f"already covered by the films around it. {swap.in_title} sits further "
         f"out, which is why the slate ends up reaching "
         f"{swap.after['clusters']} groups instead of {swap.before['clusters']}."
@@ -144,7 +152,7 @@ def _explain(swap: Swap, analysis_before: Analysis, slate_name: str) -> str:
         f"Audience groups before: {swap.before['clusters']}, after: {swap.after['clusters']}\n"
         f"Largest group before: {swap.before['largest_cluster']}, "
         f"after: {swap.after['largest_cluster']}\n\n"
-        "Say what the programme gains. Do not claim attendance figures or "
+        "Say what the lineup gains. Do not claim attendance figures or "
         "certainty about real audiences."
     )
     try:
@@ -179,7 +187,7 @@ def improve(qloo: Qloo, matrix: Matrix, analysis: Analysis,
         headline = analysis.headline
         steps.append(Step(
             "observe",
-            f"{headline['films']} films reach {headline['clusters']} audiences; "
+            f"{headline['films']} films separate into {headline['clusters']} groups; "
             f"the largest group holds {headline['largest_cluster']} slots.",
             {"round": round_no, **headline},
         ))
@@ -192,7 +200,7 @@ def improve(qloo: Qloo, matrix: Matrix, analysis: Analysis,
         steps.append(Step(
             "plan",
             f"{out_title} sits closest to everything else in the biggest group, "
-            f"so the programme would miss it least. Looking for a replacement "
+            f"so the lineup would miss it least. Looking for a replacement "
             f"further out.",
             {"cut": out_title},
         ))
@@ -249,10 +257,16 @@ def improve(qloo: Qloo, matrix: Matrix, analysis: Analysis,
 
             gain = _score(trial.headline, len(matrix.films)) - base
             if gain <= 0:
+                was = analysis.headline["clusters"]
+                now = trial.headline["clusters"]
                 rejected.append({
                     "film": cname,
-                    "why": f"lands inside an existing group; "
-                           f"still {trial.headline['clusters']} audiences",
+                    "gain": round(gain, 6),
+                    "clusters": now,
+                    "why": ("landed inside a group the lineup already covers"
+                            if now <= was else
+                            f"made a {_ordinal(now)} group by splitting an "
+                            "existing one, not by reaching anyone new"),
                 })
                 continue
             if best is None or gain > best[0]:
@@ -266,7 +280,7 @@ def improve(qloo: Qloo, matrix: Matrix, analysis: Analysis,
         if best is None:
             steps.append(Step(
                 "decide",
-                "None of the candidates opened a group the programme does not "
+                "None of the candidates opened a group the lineup does not "
                 "already have. Leaving the slate alone.",
                 {"rejected": len(rejected)},
             ))
@@ -278,7 +292,7 @@ def improve(qloo: Qloo, matrix: Matrix, analysis: Analysis,
         steps.append(Step(
             "decide",
             f"Swap {swap.out_title} for {swap.in_title}: "
-            f"{swap.before['clusters']} audiences becomes {swap.after['clusters']}.",
+            f"{swap.before['clusters']} groups becomes {swap.after['clusters']}.",
             {"gain": swap.gain, "after": swap.after},
         ))
 
@@ -293,7 +307,7 @@ def improve(qloo: Qloo, matrix: Matrix, analysis: Analysis,
 
         wins = []
         if groups_after > groups_before:
-            wins.append(f"take the programme from {groups_before} audiences "
+            wins.append(f"take the lineup from {groups_before} groups "
                         f"to {groups_after}")
         if biggest_after < biggest_before:
             wins.append(f"bring the largest group down from {biggest_before} "
@@ -312,8 +326,10 @@ def improve(qloo: Qloo, matrix: Matrix, analysis: Analysis,
     else:
         verdict = (
             "The agent found no change worth making. Every replacement it "
-            "tested landed inside a group the programme already covers."
+            "tested landed inside a group the lineup already covers."
         )
+
+    rejected.sort(key=lambda r: -r.get("gain", -99))
 
     return AgentResult(steps=steps, swaps=swaps, rejected=rejected[:8],
                        verdict=verdict, calls=qloo.calls_made - start_calls,

@@ -29,8 +29,8 @@ def main() -> int:
             resolved, failed = resolve_all(qloo, films, entity_type)
             m = matrix_mod.build(qloo, resolved, entity_type)
             a = analyse(m)
-            print(f"  shape:  {a.headline['films']} films, "
-                  f"{a.headline['clusters']} clusters, "
+            print(f"  shape:  {a.headline['films']} items, "
+                  f"{a.headline['clusters']} groups, "
                   f"{a.headline['bridges']} bridges")
             if failed:
                 print(f"  unresolved: {', '.join(failed)}")
@@ -59,7 +59,7 @@ def main() -> int:
             continue
         if missed:
             print(f"  not found: {', '.join(missed)}")
-        print(f"  shape:  {len(m.films)} placed, {len(a.clusters)} audiences")
+        print(f"  shape:  {len(m.films)} placed, {len(a.clusters)} groups")
 
     print(f"\nCache warm. {total} live calls made in total.")
     print("The demo now runs without touching Qloo.")

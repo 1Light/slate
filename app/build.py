@@ -154,6 +154,7 @@ def _pipeline(name, note, films, entity_type, source):
     shape["entity_type"] = entity_type
     shape["reading"] = ENTITY_LABEL.get(entity_type, "entities")
     one, many = ENTITY_NOUN.get(entity_type, ("item", "items"))
+    shape["weak"] = bool((a.cut_check or {}).get("weak"))
     shape["noun"] = one
     shape["nouns"] = many
     return qloo, resolved, m, a, shape
@@ -278,7 +279,7 @@ def _match_groups(before: list[list[str]], after: list[list[str]]) -> dict:
             continue
         kin_before = {t for t in before[i] if t != title and t in where_after}
         kin_after = {t for t in after[where_after[title]] if t != title}
-        if kin_before and kin_before != kin_after:
+        if kin_before != kin_after:
             moved.append(title)
     return {"moved": moved}
 
@@ -295,10 +296,10 @@ def _diff(base: dict, now: dict) -> dict:
 
     parts = []
     if len(is_) != len(was):
-        parts.append(f"{len(was)} audience{'' if len(was) == 1 else 's'}, "
+        parts.append(f"{len(was)} group{'' if len(was) == 1 else 's'}, "
                      f"now {len(is_)}.")
     else:
-        parts.append(f"{len(is_)} audience{'' if len(is_) == 1 else 's'}.")
+        parts.append(f"{len(is_)} group{'' if len(is_) == 1 else 's'}.")
 
     n = len(moved)
     if n:
@@ -377,13 +378,15 @@ def _subset(m, keep: list[str]):
                              resolved=m.resolved)
 
 
-def _shape_from(name, note, m, source, unresolved, stability=True):
+def _shape_from(name, note, m, source, unresolved, entity_type,
+                stability=True):
     a = analyse(m, stability=stability)
     resolved = {t: m.resolved[t] for t in m.films if t in m.resolved}
     shape = _shape(name, note, resolved, m, a, source, unresolved)
-    shape["entity_type"] = ""
-    shape["reading"] = "films"
-    shape["noun"], shape["nouns"] = "film", "films"
+    one, many = ENTITY_NOUN.get(entity_type, ("item", "items"))
+    shape["entity_type"] = entity_type
+    shape["reading"] = ENTITY_LABEL.get(entity_type, "items")
+    shape["noun"], shape["nouns"] = one, many
     return shape, a
 
 
