@@ -8,7 +8,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app import agent as agent_mod          # noqa: E402
 from app import matrix as matrix_mod         # noqa: E402
-from app.build import _load_lineup           # noqa: E402
+from app.build import (ENTITY_LABEL, _films_from_lines,
+                       _load_lineup)           # noqa: E402
 from app.resolve import Film                 # noqa: E402
 from app.qloo import Qloo, QlooError         # noqa: E402
 from app.resolve import resolve_all          # noqa: E402
@@ -60,6 +61,16 @@ def main() -> int:
         if missed:
             print(f"  not found: {', '.join(missed)}")
         print(f"  shape:  {len(m.films)} placed, {len(a.clusters)} groups")
+
+    for path in sorted(Path("data/candidates").glob("*.json")):
+        d = json.loads(path.read_text(encoding="utf-8"))
+        kind = f"urn:entity:{path.stem}"
+        every = sorted(set(d.get("one", []) + d.get("many", [])))
+        resolved, missed = resolve_all(qloo, _films_from_lines(every), kind)
+        print(f"\n{ENTITY_LABEL.get(kind, path.stem)} candidates")
+        print(f"  {len(resolved)}/{len(every)} placed")
+        for t in missed:
+            print(f"  not found: {t}")
 
     print(f"\nCache warm. {total} live calls made in total.")
     print("The demo now runs without touching Qloo.")

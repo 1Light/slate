@@ -416,7 +416,7 @@ def test_the_outlier_has_its_own_colour():
 def test_the_header_links_to_every_section():
     html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
     tabs = html[html.index('<nav class="tabs">'):html.index("</nav>")]
-    for target in ("#festivals", "#views", "#checked", "#yours"):
+    for target in ("#festivals", "#views", "#checked", "/app"):
         assert target in tabs, target
 
 
@@ -521,28 +521,9 @@ def test_the_change_line_is_computed_from_both_partitions():
         assert word in block, word
 
 
-def test_the_panel_appears_under_sundance_and_under_your_own_slate():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    assert "panel(hook, { slug: item.slug }" in js
-    assert "panel(hook, { films, entity_type: d.entity_type }" in js
-
-
-def test_the_panel_can_be_reset():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    assert "Reset to the real lineup" in js
-
-
-def test_the_panel_shows_nothing_until_asked():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    block = js[js.index("function panel("):js.index("async function viewTabs(")]
-    tail = block[block.rindex("  drawChips();"):]
-    assert "run();" not in tail
-
-
-def test_the_panel_does_not_repeat_the_slot_advice():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    block = js[js.index("function panel("):js.index("async function viewTabs(")]
-    assert "spend.remove()" in block
+def test_a_lineup_can_be_put_back():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "Use this version" in js, "versions are how a lineup goes back"
 
 
 def test_one_broken_test_does_not_hide_the_evidence():
@@ -582,16 +563,15 @@ def test_the_page_has_a_maximum_width():
     assert "--page:" in css
     assert ".band { max-width: var(--page)" in css
     html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
-    for section in ("opening", "group-head", "views", "checked", "invite"):
+    for section in ("opening", "group-head", "views", "checked"):
         assert f'class="{section} band' in html or f'class="{section}' in html
 
 
 def test_every_heading_has_a_size():
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
-    for sel in (".views h2", ".checked h2", ".invite h2", ".group-head h2"):
+    for sel in (".views h2", ".checked h2", ".group-head h2"):
         assert sel in css, sel
-    block = css[css.index(".panel-box h3"):css.index(".panel-box .lede")]
-    assert "font-size: 1.5rem" in block
+    assert ".desk-rail-head {" in css and ".said-head {" in css
 
 
 def test_group_columns_are_equal_width():
@@ -613,14 +593,6 @@ def test_the_loading_indicator_is_gone():
     assert "Reading the programmes" not in html
     assert "Nothing is stored" not in html
     assert "$('loading')" not in js
-
-
-def test_the_fewer_slots_block_waits_to_be_used():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    block = js[js.index("function panel("):js.index("async function viewTabs(")]
-    assert "fewer.hidden = true" in block
-    assert "fewer.hidden = false" in block
-
 
 def test_nothing_is_smaller_than_twelve_pixels():
     import re
@@ -676,17 +648,6 @@ def test_stacked_tables_are_labelled():
     block = js[js.index("async function tests()"):js.index("function ariTable(")]
     assert "titled('Adjusted Rand index, by lineup'" in block
     assert "titled('Each group on its own" in block
-
-
-def test_the_try_it_box_is_a_centred_card():
-    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
-    assert 'class="invite-card"' in html
-    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
-    block = css[css.index(".invite-card {"):css.index("}", css.index(".invite-card {"))]
-    assert "margin: var(--s3) auto 0" in block
-    assert "border-radius" in block
-
-
 def test_groups_are_lettered_and_the_pairs_say_which():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     assert "const letterFor" in js
@@ -739,7 +700,7 @@ def test_the_legend_is_three_facts_and_nothing_else():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     block = js[js.index("function legendText("):js.index("function threads(")
               if "function threads(" in js else js.index("function legendText(") + 2000]
-    assert "is a bridge. It links" in block
+    assert "is a bridge. It sits in group" in block
     assert "is an outlier. It is weakly tied" in block
     assert "no affinity data linking" in block
     for gone in ("ARI", "shuffled ranks", "separate evenings", "Faded titles"):
@@ -806,9 +767,12 @@ def test_the_cards_hold_still_for_reduced_motion():
 def test_an_edit_moves_the_rows_rather_than_redrawing():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     assert "function settleInto(" in js
-    block = js[js.index("function settleInto("):js.index("function panel(")]
+    at = js.index("function settleInto(")
+    block = js[at:js.index("\nfunction ", at + 10)]
     assert "getBoundingClientRect" in block
     assert "if (!before.size || reduced) return" in block
+    work = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "settleInto(figure, before," in work
 
 
 def test_the_hero_does_not_list_the_page():
@@ -840,14 +804,6 @@ def test_group_letters_look_the_same_everywhere():
     block = css[css.index(".column-letter"):css.index("}", css.index(".column-letter"))]
     assert "background: var(--panel-bright)" in block
     assert "color: var(--panel)" in block
-
-
-def test_the_signpost_sits_in_the_hero():
-    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
-    block = css[css.index(".signpost {"):css.index("}", css.index(".signpost {"))]
-    assert "text-align: center" not in block
-    assert "var(--faint)" in block
-
 
 def test_the_tabs_show_where_you_are():
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
@@ -897,31 +853,6 @@ def test_every_example_set_resolves_to_one_type():
         d = json.loads(path.read_text(encoding="utf-8"))
         assert d["entity_type"].startswith("urn:entity:")
         assert 4 <= len(d["films"]) <= 24, path.name
-
-
-def test_what_you_removed_is_not_what_slate_dropped():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    block = js[js.index("function panel("):js.index("async function viewTabs(")]
-    assert "Slate dropped:" in block
-    assert "putBack" in block
-    assert "d.by_you" in js
-
-
-def test_the_waiting_message_changes():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    block = js[js.index("async function runOwn("):]
-    assert "Looking up your titles" in block
-    assert "takes a little longer" in block
-
-
-def test_the_agent_runs_from_the_panel():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    block = js[js.index("function panel("):js.index("async function viewTabs(")]
-    assert "Swap a film to reach more audiences" in block
-    assert "Suggest a swap" in block
-    assert "body.swap = true" in block
-
-
 def test_the_panel_agent_decides_on_the_current_lineup():
     src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
     block = src[src.index("def panel("):src.index('@app.post("/api/agent")')]
@@ -953,7 +884,8 @@ def test_an_empty_legend_leaves_no_rule_behind():
 
 def test_a_film_you_added_is_marked_as_added():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    block = js[js.index("function filmNode("):js.index("const LETTERS")]
+    at = js.index("function filmNode(")
+    block = js[at:js.index("\nfunction ", at + 10)]
     assert "fresh.has(f.title)" in block
     assert "'added'" in block
     board = js[js.index("function board("):js.index("function settleInto(")]
@@ -962,7 +894,8 @@ def test_a_film_you_added_is_marked_as_added():
 
 def test_a_film_can_carry_more_than_one_tag():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    block = js[js.index("function filmNode("):js.index("const LETTERS")]
+    at = js.index("function filmNode(")
+    block = js[at:js.index("\nfunction ", at + 10)]
     assert "else if" not in block, "tags must be independent, not exclusive"
 
 
@@ -991,27 +924,6 @@ def test_the_coverage_notice_speaks_the_right_noun():
     assert "films you gave" not in block
     assert "Left out: " in block
     assert "no taste connection" in block
-
-
-def test_the_change_line_does_not_say_still():
-    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
-    block = src[src.index("def _diff("):src.index("def _reaches(")]
-    assert "Still " not in block
-
-
-def test_the_keep_control_counts_the_lineup():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    block = js[js.index("const drawSizes ="):js.index("const run =")]
-    assert "state.films.filter" in block
-    assert "drawSizes(d.films.length)" not in js
-
-
-def test_additions_are_marked_not_listed():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    block = js[js.index("function panel("):js.index("async function viewTabs(")]
-    assert "`Added: " not in block
-
-
 def test_a_lineup_that_does_not_separate_is_one_group():
     src = (Path(__file__).resolve().parent.parent / "app" / "structure.py").read_text()
     assert "WEAK_SEPARATION = 0.3" in src
@@ -1067,112 +979,650 @@ def test_the_nearest_miss_is_shown_first():
     src = (Path(__file__).resolve().parent.parent / "app" / "agent.py").read_text()
     assert 'rejected.sort(key=lambda r: -r.get("gain"' in src
     assert '"gain": round(gain, 6)' in src
+def test_sets_are_ranked_worst_pair_first():
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    assert "def _profile(m, titles):" in src
+    block = src[src.index("def _profile("):src.index("def _mean_distance(")]
+    assert "tuple(sorted(" in block, "the pairs are compared in order"
+    chance = src[src.index("def _against_chance("):src.index("def _contribution(")]
+    assert "here = _profile(m, chosen)" in chance
+    assert "p < here" in chance and "p == here" in chance
+    assert '"percentile"' not in chance, "no bare percentage in the payload"
 
 
-def test_editing_a_lineup_keeps_its_type():
+def test_a_tie_at_the_top_is_reported():
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    block = src[src.index("def _against_chance("):src.index("def _contribution(")]
+    assert '"beats": below' in block and '"ties": same' in block
+def test_a_bridge_says_what_it_joins():
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    assert 'connects = {b["film"]: b["connects"] for b in a.bridges}' in src
+    assert '"connects": connects.get(title),' in src
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "(f.connects || []).map(letterFor)" in js
+    assert "`bridge ${joins}`" in js
+
+
+def test_the_legend_names_the_groups_too():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "const named = (b) =>" in js
+    assert "It sits in group ${letterFor(b.cluster)}" in js
+    assert "It links all" not in js, "the old wording never said which"
+
+
+def test_the_letters_exist_before_they_are_used():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert js.index("const LETTERS") < js.index("letterFor(f.cluster)") \
+        if "letterFor(f.cluster)" in js else True
+    assert js.index("const LETTERS") < 2000, "hoisted to the top"
+
+
+def test_every_bridge_in_the_served_payload_names_its_groups():
+    import json
+    served = json.loads((Path(__file__).resolve().parent.parent / "data"
+                         / "served.json").read_text())
+    found = 0
+    for d in served.values():
+        if not isinstance(d, dict) or "films" not in d:
+            continue
+        for f in d["films"]:
+            if f.get("role") == "bridge":
+                found += 1
+                assert f.get("connects"), f"{f['title']} has no groups"
+                assert len(f["connects"]) >= 2
+    assert found, "no bridges in the payload to check"
+
+
+def test_workspaces_belong_to_one_browser():
+    src = (Path(__file__).resolve().parent.parent / "app" / "store.py").read_text()
+    import ast as _ast
+    tree = _ast.parse(src)
+    for fn in ("listing", "read", "update", "remove", "add_version"):
+        node = next(n for n in tree.body
+                    if isinstance(n, _ast.FunctionDef) and n.name == fn)
+        assert "owner" in [a.arg for a in node.args.args], fn
+    assert "WHERE owner = %s AND id = %s" in src
+
+
+def test_the_store_runs_without_postgres():
+    src = (Path(__file__).resolve().parent.parent / "app" / "store.py").read_text()
+    assert "import sqlite3" in src
+    assert "DATABASE_URL" in src
+    block = src[src.index("def _pg("):src.index("def _lite(")]
+    assert "except ImportError" in block, "a missing driver falls back"
+
+
+def test_a_browser_id_is_checked():
     src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
-    block = src[src.index("def panel("):src.index("extra = _films_from_lines")]
-    assert 'entity_type = "urn:entity:movie"' not in block
-    assert "req.entity_type if req.entity_type in ENTITY_LABEL" in block
-    model = src[src.index("class PanelRequest"):src.index("@app.post(\"/api/panel\")")]
-    assert "entity_type: str | None = None" in model
+    block = src[src.index("def _owner("):src.index("@app.get(\"/api/spaces\")")]
+    assert "isalnum()" in block
+    assert "[:64]" in block
+    assert "len(clean) < 8" in block
 
 
-def test_the_panel_result_reports_its_own_type():
+def test_versions_are_capped():
+    src = (Path(__file__).resolve().parent.parent / "app" / "store.py").read_text()
+    assert "MAX_VERSIONS = 20" in src
+    block = src[src.index("def add_version("):src.index("def remove(")]
+    assert "kept[0].get(\"titles\") == titles" in block, "no duplicate saves"
+    assert "[:MAX_VERSIONS]" in block
+
+
+def test_the_app_page_asks_for_no_sign_in():
+    html = (Path(__file__).resolve().parent.parent / "static" / "app.html").read_text()
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    for word in ("sign in", "log in", "sign up", "password"):
+        assert word not in (html + js).lower(), word
+    assert 'type="email"' not in (html + js), "no email field"
+    assert "your email" not in (html + js).lower()
+    assert "crypto.randomUUID" in js
+    assert "slate.owner.v1" in js
+
+
+def test_the_front_door_lists_and_makes():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "'/api/spaces'" in js and "method: 'POST'" in js
+    assert "/api/spaces?owner=" in js
+    assert "Use an example" in js
+    assert "function spaceRow(w)" in js
+    assert "function sampleFigure()" in js, "the door shows an answer"
+    assert "door-card-bar" in js, "each workspace shows its shape"
+    for action in ("Rename", "Delete"):
+        assert action in js, action
+
+
+def test_the_dashboard_reuses_the_figure():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    for fn in ("chapter(d, null)", "settleInto(figure", "withTitles("):
+        assert fn in js, fn
+    html = (Path(__file__).resolve().parent.parent / "static" / "app.html").read_text()
+    assert html.index("app.js") < html.index("work.js"), "renderers load first"
+
+
+def test_the_landing_wiring_only_runs_on_the_landing_page():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "if (document.getElementById('festivals')) start();" in js
+
+
+def test_the_lineup_lives_in_the_workspace():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "const lineup = () => (space ? space.titles.slice() : [])" in js
+    block = js[js.index("async function runSpace("):js.index("function paintSpace(")]
+    assert "films: lineup()" in block
+    assert "entity_type: space.entity_type" in block
+
+
+def test_a_slot_count_is_reported_never_enforced():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("function drawCounts()"):js.index("function waiting(")]
+    assert "slots over" in block and "slots free" in block
+    add = js[js.index("addField.onkeydown"):js.index("desk-rail-slots")]
+    assert "slots" not in add, "adding past the slots is allowed"
+
+
+def test_opening_a_version_previews_before_it_applies():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    at = js.index("async function previewVersion(")
+    block = js[at:js.index("function allVersions(")]
+    assert "drawn(d)" in block, "the preview draws the figure"
+    assert "Use this version" in block
+    assert block.index("drawn(d)") < block.index("Use this version")
+
+
+def test_a_late_result_cannot_land_on_the_dashboard():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("async function runSpace("):js.index("function paintSpace(")]
+    assert "const mine = ++asked;" in block
+    assert "if (mine !== asked) return;" in block
+
+
+def test_a_candidate_is_judged_by_rebuilding():
     src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
-    block = src[src.index("def _shape_from("):src.index("def _best_subset_fast(")]
-    assert 'shape["entity_type"] = entity_type' in block
-    assert '"reading"] = "films"' not in block
-    assert 'ENTITY_NOUN.get(entity_type' in block
+    block = src[src.index("def _fit_brief("):src.index("CHOOSE_CAP")]
+    assert "analyse(_subset(m, lineup), stability=False)" in block
+    assert "analyse(_subset(m, lineup + [candidate])" in block
+    for key in ("groups_before", "groups_after", "role", "connects", "spare"):
+        assert key in block, key
 
 
-def test_the_page_sends_the_type_back():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    assert "panel(hook, { films, entity_type: d.entity_type }" in js
-    block = js[js.index("const run = async (opts)"):js.index("addBtn.onclick")]
-    assert "body.entity_type = source.entity_type" in block
-
-
-def test_titles_are_marked_inside_sentences():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    assert "function withTitles(node, text, names)" in js
-    assert "el('i', 'work', hit)" in js
-    at = js.index("function legendText(d, node)")
-    legend = js[at:js.index("\n}\n", at)]
-    assert "withTitles(p, text, works)" in legend
-    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
-    assert "i.work" in css
-
-
-def test_you_can_watch_the_move_again():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    assert "function replay(fig, was, now, moved)" in js
-    block = js[js.index("function replay("):js.index("function settleInto(")]
-    assert "chapter(was, null)" in block, "the old arrangement is redrawn"
-    assert "dataset.replaying" in block
-    assert "const TRAVEL" in block and "const EMPTY" in block
-    assert block.index("One: the rows travel") < block.index("Two: the columns") \
-        if "One: the rows travel" in block else True
-    assert "scrollIntoView" in block
-    assert "if (reduced" in block
-    panel = js[js.index("function panel("):js.index("async function viewTabs(")]
-    assert "el('button', 'ghost', 'Show what moved')" in panel
-    foot = panel[panel.index("foot.textContent = '';"):]
-    assert "Show what moved" in foot, "it belongs under the figure"
-    assert "replay(fig, was, d, moved)" in panel
-
-
-def test_the_replay_button_comes_after_the_positions_it_needs():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    panel = js[js.index("function panel("):js.index("async function viewTabs(")]
-    assert panel.index("const before = new Map();") < panel.index("Show what moved")
-
-
-def test_what_you_removed_reads_clearly():
-    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
-    assert "--gone:" in css
-    head = css[css.index(".taken-head {"):css.index("}", css.index(".taken-head {"))]
-    assert "var(--gone)" in head
-    film = css[css.index(".taken-film {"):css.index("}", css.index(".taken-film {"))]
-    assert "var(--panel-faint)" not in film, "too dim to read on the dark panel"
-    assert "line-through" in film
-
-
-def test_the_page_is_not_white():
-    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
-    block = css[css.index(":root {"):css.index("}", css.index(":root {"))]
-    paper = block[block.index("--paper:"):block.index(";", block.index("--paper:"))]
-    assert "#FFF" not in paper.upper()
-    assert "#FBFAF8" not in paper.upper()
-
-
-def test_the_replay_offers_itself_whenever_rows_travelled():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    block = js[js.index("function settleInto("):js.index("function panel(")]
-    assert "return shifted;" in block
-    assert "shifted += 1;" in block
-    panel = js[js.index("function panel("):js.index("async function viewTabs(")]
-    assert "const shifted = settleInto(fig, before, moved);" in panel
-
-
-def test_a_title_that_was_alone_counts_as_moved():
+def test_several_candidates_are_judged_together():
     src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
-    block = src[src.index("def _match_groups("):src.index("def _diff(")]
-    assert "kin_before != kin_after" in block
-    assert "if kin_before and" not in block, "an empty before set is still a move"
+    block = src[src.index("def _choose_best("):]
+    assert "combinations(candidates, slots)" in block, "sets, not singles"
+    assert "_touching(m, lineup, list(picked))" in block
+    assert "CHOOSE_CAP" in block, "a cap on how many sets are built"
+
+def test_the_brief_is_previewed_where_it_is_read():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "function showPaper(node, kind, data)" in js
+    assert "paper-frame" in js and "srcdoc" in js
+    assert "window.open" not in js, "the brief no longer opens a blank tab"
+    assert js.count("showPaper(sheetSpot") == 2, "both briefs"
 
 
-def test_the_old_figure_survives_until_the_new_one_arrives():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    panel = js[js.index("function panel("):js.index("async function viewTabs(")]
-    head = panel[panel.index("const run = async (opts)"):panel.index("try {")]
-    assert "fig.textContent = ''" not in head, (
-        "clearing before the fetch loses the positions the replay needs")
+def test_the_download_is_a_real_file():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("function showPaper("):]
+    assert "Download PDF" in block
+    assert "/api/paper.pdf" in block
+    assert "link.download" in block
+    assert "res.status === 501" in block, "a missing renderer falls back"
+    assert js.count("el('button', 'ghost', 'Print')") == 0, (
+        "one button, not two doing the same job")
+    api = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    assert '@app.post("/api/paper.pdf")' in api
+    assert "application/pdf" in api
 
 
-def test_the_run_is_not_cut_into_sections():
+def test_preview_and_file_are_the_same_document():
+    api = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    block = api[api.index("def _document(req"):api.index('@app.post("/api/choose")')]
+    assert block.count("_document(req)") == 2, "one builder, two routes"
+    doc = (Path(__file__).resolve().parent.parent / "app" / "paper.py").read_text()
+    assert "Georgia" in doc, "a system serif, so the PDF matches the preview"
+    assert "fonts.googleapis" not in doc
+
+
+def test_a_missing_renderer_is_not_a_crash():
+    doc = (Path(__file__).resolve().parent.parent / "app" / "paper.py").read_text()
+    block = doc[doc.index("def as_pdf("):]
+    assert "except Exception" in block and "return None" in block
+    api = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    assert "501" in api
+
+
+def test_no_suggestion_is_already_in_an_example():
+    import json
+    root = Path(__file__).resolve().parent.parent
+    taken = set()
+    for p in (root / "data" / "examples").glob("*.json"):
+        for f in json.loads(p.read_text())["films"]:
+            taken.add(f["title"].lower())
+    for p in (root / "data" / "candidates").glob("*.json"):
+        d = json.loads(p.read_text())
+        for t in d["one"] + d["many"]:
+            assert t.lower() not in taken, f"{t} is already in an example"
+
+
+def test_the_probe_checks_for_clashes_too():
+    src = (Path(__file__).resolve().parent.parent / "scripts"
+           / "probe_candidates.py").read_text()
+    assert "already in an example" in src
+
+
+def test_the_app_header_does_not_restyle_the_landing_one():
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
-    block = css[css.index("#own-result .panel {"):css.index("}", css.index("#own-result .panel {"))]
-    assert "border-top: 0" in block
-    chapter = css[css.index("#own-result .chapter {"):css.index("}", css.index("#own-result .chapter {"))]
-    assert "border-top: 0" in chapter
+    at = css.index("body.workbench")
+    assert ".bar {" not in css[at:], "the app page must not redefine .bar"
+    assert ".deskbar {" in css[at:]
+    html = (Path(__file__).resolve().parent.parent / "static" / "app.html").read_text()
+    assert 'class="bar"' not in html
+    landing = (Path(__file__).resolve().parent.parent / "static"
+               / "index.html").read_text()
+    assert 'class="bar"' in landing, "the landing page keeps its own"
+
+
+def test_the_landing_page_sends_you_to_the_app():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    assert 'href="/app"' in html
+    assert 'id="yours"' not in html, "the try-it box moved to the app"
+    assert 'href="#panel"' not in html
+    assert "own-input" not in html
+
+
+def test_the_old_panel_is_gone_from_the_landing_script():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "function panel(" not in js, "the dashboard replaced it"
+    assert "async function runOwn(" not in js
+    assert "makeProject" not in js
+
+
+def test_deploying_says_the_database_is_needed():
+    notes = (Path(__file__).resolve().parent.parent / "DEPLOY.md").read_text()
+    assert "DATABASE_URL" in notes
+    assert "Internal Database URL" in notes
+    assert "wipes on every deploy" in notes, "say what happens without it"
+
+
+def test_best_means_the_same_in_both_places():
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    block = src[src.index("def _best_subset_fast("):src.index("def _profile(")]
+    assert "_profile(m, list(c))" in block, "ranked by the same measure"
+    assert "_reaches(" not in block, "the composite score disagreed with it"
+    chance = src[src.index("def _against_chance("):src.index("def _contribution(")]
+    assert "_profile(m, chosen)" in chance
+
+
+def test_a_bridge_knows_its_own_group():
+    import json
+    served = json.loads((Path(__file__).resolve().parent.parent / "data"
+                         / "served.json").read_text())
+    found = 0
+    for d in served.values():
+        if not isinstance(d, dict) or "bridges" not in d:
+            continue
+        for b in d["bridges"]:
+            found += 1
+            assert isinstance(b.get("cluster"), int), f"{b['film']} has no group"
+    assert found, "no bridges to check"
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "letterFor(b.cluster)" in js
+
+
+def test_saving_a_version_says_when_it_fails():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    at = js.index("saveBtn.onclick")
+    block = js[at:js.index("end.append(", at)]
+    assert "catch (e)" in block, "a silent failure looks like lost work"
+    assert "drawVersions()" in block
+
+def test_the_free_a_slot_block_stays_in_the_figure():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "'.spend'" not in js, "it is the thing a programmer acts on"
+
+def test_a_choice_is_ranked_by_what_it_changes():
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    assert "def _touching(m, lineup, picked):" in src
+    block = src[src.index("def _choose_best("):]
+    assert '"profile": _touching(m, lineup, list(picked))' in block, (
+        "the lineup's own pairs are the same for every option")
+    brief = src[src.index("def _contribution("):src.index("def _fit_brief(")]
+    assert "_touching(m, others, [candidate])" in brief
+
+
+def test_a_block_with_no_pool_is_not_offered():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    stand = js[js.index("function paintStand("):js.index("function distanceCard(")]
+    assert "Against the sets" not in stand, (
+        "one candidate gives nothing to compare against")
+    assert "Against the sets you could have picked" in js, "it stays after a cut"
+
+
+def test_a_title_that_merges_groups_says_so():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "closely enough that they merge" in js
+    doc = (Path(__file__).resolve().parent.parent / "app" / "paper.py").read_text()
+    flat = " ".join(doc.split())
+    assert "closely enough that they merge" in flat.replace('" "', ""), (
+        "the same finding on paper")
+
+
+def test_a_choice_that_reaches_nowhere_new_says_so():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    at = js.index("function paintChoose(")
+    assert "None of the titles you" in js[at:js.index("\nfunction ", at + 10)]
+
+
+def test_every_control_belongs_to_the_page():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    bare = js.count("el('button', null")
+    assert bare <= 1, f"{bare} buttons fall back to the browser's own styling"
+
+
+def test_the_figure_has_no_gap_above_it():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".work-figure .chapter { padding-top: 0; border-top: 0; }" in css
+    assert ".out .chapter { padding-top: 0; border-top: 0; }" in css
+
+
+def test_renaming_happens_in_place():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("function drawSpace()"):js.index("function drawCounts()")]
+    assert "contentEditable" in block
+    assert "window.prompt" not in block, "a browser dialog leaves the page"
+
+
+def test_there_is_a_way_back():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "Reset lineup" in js
+    assert "started = space.titles.slice()" in js
+    block = js[js.index("function drawCounts()"):js.index("function waiting(")]
+    assert "back.hidden" in block, "hidden until something has changed"
+
+def test_the_two_pages_cannot_restyle_each_other():
+    import re
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    at = css.index("body.workbench")
+    shared, app = css[:at], css[at:]
+
+    def tops(block):
+        found = set()
+        for sel in re.findall(r"(?m)^([.#][^{\n]*)\{", block):
+            for part in sel.split(","):
+                part = part.strip().split()[0] if part.strip() else ""
+                m = re.match(r"^\.([a-z][a-z0-9-]*)", part)
+                if m:
+                    found.add(m.group(1))
+        return found
+
+    both = tops(shared) & tops(app)
+    assert not both, f"styled in both halves: {sorted(both)}"
+
+    def frames(block):
+        return set(re.findall(r"@keyframes\s+([\w-]+)", block))
+
+    clash = frames(shared) & frames(app)
+    assert not clash, f"animation names used by both: {sorted(clash)}"
+
+
+def test_the_app_names_what_it_borrows():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "const BORROWED = {" in js
+    assert "work.js needs" in js, "it must fail loudly, not silently"
+    assert "function el(" not in js, "one definition of el, not two"
+    head = js[:js.index("const stage")]
+    for name in ("chapter", "withTitles", "nameList", "letterFor",
+                 "settleInto", "failure", "el"):
+        assert name in head, name
+
+
+def test_nothing_hides_the_focus_ring():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert "outline: none" not in css, (
+        "a keyboard user needs to see where they are")
+    assert ":focus-visible { outline:" in css
+
+
+def test_the_stylesheet_has_no_dead_rules():
+    import re
+    root = Path(__file__).resolve().parent.parent / "static"
+    css = (root / "style.css").read_text()
+    seen = "".join((root / f).read_text()
+                   for f in ("app.js", "work.js", "index.html", "app.html"))
+    words = set(re.findall(r"[\w-]+", seen))
+    dead = sorted({c for c in re.findall(r"\.([a-z][a-z0-9-]*)", css)
+                   if c not in words})
+    assert not dead, f"styled but never used: {dead}"
+
+
+def test_the_app_page_offers_no_landing_page_links():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("function failure("):js.index("const EXAMPLES")]
+    at = block.index("See a measured lineup")
+    assert "getElementById('festivals')" in block[:at], (
+        "the anchor only exists on the landing page")
+
+
+def test_too_few_placed_titles_say_so():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("async function runSpace("):js.index("function paintSpace(")]
+    assert "not enough here to separate" in block
+    assert "could not place" in block
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".nothing {" in css
+
+
+def test_the_app_works_below_a_desk():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    app = css[css.index("body.workbench"):]
+    for width in ("1040px", "880px", "620px"):
+        assert f"max-width: {width}" in app, width
+    phone = app[app.index("max-width: 620px"):]
+    assert "overflow-x: auto" in phone, "a wide figure scrolls rather than crushes"
+    assert "flex-direction: column" in phone, "rows stack"
+    assert "padding: 0.65rem 1.1rem" in phone, "targets grow to a thumb"
+
+
+def test_an_off_page_tab_cannot_break_the_scroll_spy():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("function markWhere()"):js.index("const mark = ()")]
+    assert "querySelector(tab.getAttribute" not in block, (
+        "querySelector throws on an href that is not a selector")
+    assert "href.startsWith('#')" in block
+
+
+def test_one_broken_step_does_not_blank_the_page():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("const steps = ["):js.index("function chapter(")]
+    assert "catch (e)" in block
+    for what in ("the hero animation", "the scroll spy", "the evidence"):
+        assert what in block, what
+
+
+def test_a_renamed_class_did_not_rename_a_property():
+    import re
+    for f in ("work.js", "app.js"):
+        js = (Path(__file__).resolve().parent.parent / "static" / f).read_text()
+        bad = re.findall(r"\w+\.[a-z]+-[\w-]+(?=[\s.;,)\]])", js)
+        bad = [b for b in bad if not b.startswith(("this.", "e.", "ev."))]
+        assert not bad, f"{f}: a dash in a property name is subtraction: {bad}"
+
+
+def test_the_door_shows_what_slate_returns():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "const SAMPLE = {" in js
+    assert "function sampleFigure()" in js
+    block = js[js.index("function draw()"):js.index("function spaceRow(")]
+    assert "sampleFigure()" in block
+    assert "What Slate gives back" in block
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    door = css[css.index(".door {"):css.index("}", css.index(".door {"))]
+    assert "grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)" in door
+
+
+def test_a_workspace_card_carries_its_shape():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("function spaceRow(w)"):js.index("document.addEventListener")]
+    assert "door-card-bar" in block
+    assert "w.sizes" in block
+    api = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    listing = api[api.index('@app.get("/api/spaces")'):api.index('@app.get("/api/spaces/{wid}")')]
+    assert 'row["sizes"]' in listing
+    store = (Path(__file__).resolve().parent.parent / "app" / "store.py").read_text()
+    assert '"sizes": list(sizes or [])' in store
+
+
+def test_the_door_has_one_primary_action():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("function draw()"):js.index("function spaceRow(")]
+    assert "el('button', 'solid', 'Make a workspace')" in block
+    assert "el('button', 'linky', 'Use an example')" in block, "quiet, not equal"
+
+
+def test_no_class_is_styled_twice_at_the_top_level():
+    import re
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    plain, depth = [], 0
+    for line in css.split("\n"):
+        hit = re.match(r"^\.([a-z][a-z0-9-]*)\s*\{", line)
+        if hit and depth == 0:
+            plain.append(hit.group(1))
+        depth += line.count("{") - line.count("}")
+    twice = sorted({c for c in plain if plain.count(c) > 1})
+    assert not twice, f"styled more than once: {twice}"
+
+
+def test_an_ask_is_a_view_not_an_overlay():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "function showAsk(key)" in js and "function closeAsk()" in js
+    assert "function showFigure()" in js
+    assert "sheetOver" not in js, "no dialog over the page"
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".sheet {" not in css
+    assert "body.held" not in css, "nothing locks the page's scroll"
+
+
+def test_the_rail_offers_four_asks():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("const ASKS = ["):js.index("function drawSpace()")]
+    for label in ("Fit it into fewer slots", "Find a title that adds a new group",
+                  "Check a new title against the lineup",
+                  "Compare titles before adding"):
+        assert label in block, label
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".ask.on {" in css, "the open ask is marked"
+
+
+def test_the_rail_shows_a_handful_of_chips():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "const CHIPS_SHOWN = 5;" in js
+    block = js[js.index("function drawChips()"):js.index("function drawCounts()")]
+    assert "chipsOpen" in block and "chips-more" in block
+
+
+def test_findings_sit_beside_their_evidence():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    block = css[css.index(".work-split {"):css.index("}", css.index(".work-split {"))]
+    assert "grid-template-columns: minmax(0, 1fr) 21rem" in block
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert js.count("el('div', 'work-split')") >= 4, "every ask uses it"
+    assert "function distanceCard(rows)" in js
+
+
+def test_the_distance_card_starts_short():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("function distanceCard(rows)"):js.index("function compareAsk(")]
+    assert "show(4)" in block
+    assert "more" in block, "the rest is one click away"
+
+
+def test_the_title_marker_is_not_a_layout_class():
+    import re
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    mark = re.search(r"el\('i', '([a-z-]+)', hit\)", js)
+    assert mark, "the marker's class could not be found"
+    name = mark.group(1)
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert re.search(rf"(?m)^\.{name}\s*\{{", css) is None, (
+        f"'{name}' is also a standalone rule, so titles inherit its box")
+
+
+def test_what_moved_is_shown_not_animated():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "View previous shape" in js and "View current shape" in js
+    assert "function drawFeet()" in js
+    assert "replay(" not in js, "the animation was never readable"
+    app = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "function replay(" not in app
+
+
+def test_a_result_is_proposed_before_it_is_applied():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    for label in ("Keep this set", "Make this swap", "Use this version"):
+        assert label in js, label
+
+
+def test_the_status_line_does_not_repeat_the_figure():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("async function runSpace("):js.index("const seatOf")]
+    assert "status.textContent = '';" in block
+    assert "d.diff" not in block, "the verdict belongs to the figure"
+
+
+def test_the_app_actually_starts():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    tail = js[-400:]
+    assert "if (opening) openSpace(opening);" in tail
+    assert "else load();" in tail
+    assert "hashchange" in js
+
+
+def test_a_printed_group_reads_its_titles():
+    import json
+    from app import paper
+    root = Path(__file__).resolve().parent.parent
+    shape = json.loads((root / "data" / "served.json").read_text())["sundance2024"]
+    doc = paper.lineup_doc(shape, "Sundance", 10)
+    assert "index &middot; films" not in doc
+    first = shape["clusters"][0]["films"][0]
+    assert first in doc, f"{first} should be in the printed groups"
+
+
+def test_a_title_qloo_cannot_place_is_marked():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("function drawChips()"):js.index("function drawCounts()")]
+    assert "shown.unresolved" in block
+    assert "'chip lost'" in block
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".chip.lost" in css
+
+
+def test_an_ask_opens_onto_the_lineup():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("function showAsk(key)"):js.index("function showFigure()")]
+    assert "out.appendChild(drawn(shown))" in block
+    assert "standing" in block
+    assert js.count("out.classList.remove('standing')") == 4, "every ask clears it"
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".out.standing" in css
+
+
+def test_a_field_is_the_width_of_what_goes_in_it():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    block = css[css.index('.work-form input[type="text"] {'):]
+    block = block[:block.index("}")]
+    assert "flex: 0 1" in block, "a short title in a full-width box looks wrong"
+    assert "min-width: 14rem" in block
+
+
+def test_the_breadcrumb_has_room_to_breathe():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "'\\u00a0/\\u00a0'" in js
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".deskbar-slash { color:" in css
+
+
+def test_the_preview_is_called_what_it_is():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "The lineup on paper" not in js
+    assert "el('button', 'ghost', 'Preview')" in js

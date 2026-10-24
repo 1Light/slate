@@ -10,6 +10,9 @@ for (const m of src.matchAll(/function\s+([A-Za-z_$][\w$]*)/g)) defined.add(m[1]
 for (const m of src.matchAll(/(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/g)) defined.add(m[1]);
 for (const m of src.matchAll(/(?:const|let|var)\s*\{([^}]+)\}/g))
   m[1].split(',').forEach(x => defined.add(x.split(':').pop().trim()));
+// for (const [a, b] of ...) binds names too
+for (const m of src.matchAll(/(?:const|let|var)\s*\[([^\]]+)\]/g))
+  m[1].split(',').forEach(x => { const n = x.trim(); if (n) defined.add(n); });
 for (const m of src.matchAll(/function[^(]*\(([^)]*)\)/g))
   m[1].split(',').forEach(x => { const n = x.trim().split(/[=\s]/)[0]; if (n) defined.add(n); });
 for (const m of src.matchAll(/\(([^)]*)\)\s*=>/g))

@@ -29,3 +29,5 @@ env/
 
 slate_setup.sh
 apply.sh
+data/slate.db
+!DEPLOY.md

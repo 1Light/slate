@@ -5,6 +5,8 @@ const el = (tag, cls, text) => {
   if (text != null) n.textContent = text;
   return n;
 };
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const letterFor = (i) => LETTERS[i] || String(i + 1);
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const grey = (i) => `var(--g${i % 6})`;
 
@@ -25,8 +27,12 @@ function onceVisible(node, fn, threshold = 0.2) {
 function markWhere() {
   const tabs = [...document.querySelectorAll('.tabs a')];
   const spots = tabs
-    .map((tab) => ({ tab, at: document.querySelector(tab.getAttribute('href')) }))
-    .filter((s) => s.at);
+    .map((tab) => {
+      const href = tab.getAttribute('href') || '';
+      if (!href.startsWith('#') || href.length < 2) return null;
+      return { tab, at: document.getElementById(href.slice(1)) };
+    })
+    .filter((s) => s && s.at);
   if (!spots.length) return;
 
   const mark = () => {
@@ -217,27 +223,28 @@ async function start() {
     const sec = chapter(data, item.slug, n);
     host.appendChild(sec);
     byslug[item.slug] = true;
-    if (item.slug === 'sundance2024') {
-      const hook = el('section', 'panel reveal');
-      hook.id = 'panel';
-      host.appendChild(hook);
-      panel(hook, { slug: item.slug }, data.films.map((f) => f.title));
-    }
   }
   if (!n) { problem('No programmes could be read.'); return; }
 
-  agentSection();
-  viewTabs();
-  tests();
-  revealAll();
-  stickyBar();
-  backToTop();
-  markWhere();
-  const ex = $('own-example');
-  if (ex) ex.onclick = useExample;
-  heroStage();
-  markStage('stage-bridge', 'bridge');
-  markStage('stage-outlier', 'outlier');
+  const steps = [
+    ['the agent examples', agentSection],
+    ['the media tabs', viewTabs],
+    ['the evidence', tests],
+    ['reveal on scroll', revealAll],
+    ['the sticky header', stickyBar],
+    ['back to top', backToTop],
+    ['the scroll spy', markWhere],
+    ['the hero animation', heroStage],
+    ['the bridge animation', () => markStage('stage-bridge', 'bridge')],
+    ['the outlier animation', () => markStage('stage-outlier', 'outlier')],
+  ];
+  for (const [what, run] of steps) {
+    try {
+      run();
+    } catch (e) {
+      console.error(`Slate could not set up ${what}:`, e);
+    }
+  }
 }
 
 function chapter(d, slug, index) {
@@ -294,7 +301,8 @@ function filmNode(f, fresh) {
   }
   if (f.role === 'bridge') {
     n.classList.add('bridge');
-    n.appendChild(el('span', 'tag', 'bridge'));
+    const joins = (f.connects || []).map(letterFor).join('\u00b7');
+    n.appendChild(el('span', 'tag', joins ? `bridge ${joins}` : 'bridge'));
   }
   if (f.role === 'alone') {
     n.classList.add('alone');
@@ -307,9 +315,6 @@ function filmNode(f, fresh) {
   }
   return n;
 }
-
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-const letterFor = (i) => LETTERS[i] || String(i + 1);
 
 function columnHead(count, index, noun, nouns) {
   const h = el('div', 'column-head');
@@ -460,7 +465,7 @@ function withTitles(node, text, names) {
     });
     if (at === -1) { node.appendChild(document.createTextNode(rest)); return; }
     if (at) node.appendChild(document.createTextNode(rest.slice(0, at)));
-    node.appendChild(el('i', 'work', hit));
+    node.appendChild(el('i', 'tname', hit));
     rest = rest.slice(at + hit.length);
   }
 }
@@ -482,13 +487,24 @@ function legendText(d, node) {
     return;
   }
 
+  const named = (b) => {
+    const joins = (b.connects || []).map(letterFor);
+    if (joins.length === 2) return `group ${joins[0]} and group ${joins[1]}`;
+    if (joins.length > 2) {
+      return `groups ${joins.slice(0, -1).join(', ')} and `
+        + joins[joins.length - 1];
+    }
+    return '';
+  };
   const bridges = (d.bridges || []).map((b) => b.film);
   if (bridges.length === 1) {
     const b = d.bridges[0];
     const n = b.connects.length;
     line(n >= d.clusters.length
-      ? `${b.film} is a bridge. It links all ${n} groups.`
-      : `${b.film} is a bridge. It links ${n} of the ${d.clusters.length} groups.`);
+      ? `${b.film} is a bridge. It sits in group ${letterFor(b.cluster)} and `
+        + `connects ${named(b)}, which nothing else here joins.`
+      : `${b.film} is a bridge. It sits in group ${letterFor(b.cluster)} and `
+        + `connects ${named(b)}.`);
   } else if (bridges.length > 1) {
     line(`${nameList(bridges)} are bridges. Each links groups that would `
       + 'otherwise be separate.');
@@ -869,102 +885,6 @@ function ariTable(rows) {
   return t;
 }
 
-function replay(fig, was, now, moved) {
-  if (reduced || !was) return;
-  const box = fig.getBoundingClientRect();
-  if (box.top < 0 || box.bottom > window.innerHeight) {
-    fig.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-  if (fig.dataset.replaying) return;
-  fig.dataset.replaying = '1';
-
-  const here = fig.firstElementChild;
-  if (!here) { delete fig.dataset.replaying; return; }
-
-  const seat = (node) => {
-    const at = new Map();
-    node.querySelectorAll('.film[data-title]').forEach((row) => {
-      at.set(row.dataset.title, row.getBoundingClientRect());
-    });
-    return at;
-  };
-  const newer = seat(here);
-  const tall = fig.getBoundingClientRect().height;
-
-  const then = chapter(was, null);
-  then.classList.add('shown');
-  ['.chapter-title', '.verdict-line', '.spend'].forEach((sel) => {
-    const gone = then.querySelector(sel);
-    if (gone) gone.remove();
-  });
-  then.style.position = 'absolute';
-  then.style.inset = '0';
-  fig.style.position = 'relative';
-  fig.style.minHeight = `${tall}px`;
-  here.style.opacity = '0';
-  fig.appendChild(then);
-
-  const TRAVEL = 1500;
-  const EMPTY = 700;
-
-  requestAnimationFrame(() => {
-    const older = seat(then);
-    const mark = new Set(moved || []);
-
-    then.querySelectorAll('.film[data-title]').forEach((row) => {
-      const from = older.get(row.dataset.title);
-      const to = newer.get(row.dataset.title);
-      if (!from) return;
-      if (!to) {
-        row.animate([{ opacity: 1 }, { opacity: 0.25 }],
-          { duration: 500, delay: 300, easing: 'ease-out', fill: 'both' });
-        return;
-      }
-      const dx = to.left - from.left;
-      const dy = to.top - from.top;
-      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
-      row.style.zIndex = mark.has(row.dataset.title) ? '5' : '1';
-      row.animate(
-        [{ transform: 'none' },
-         { transform: `translate(${dx}px, ${dy}px)` }],
-        { duration: mark.has(row.dataset.title) ? TRAVEL : TRAVEL * 0.7,
-          delay: mark.has(row.dataset.title) ? 250 : 120,
-          easing: 'cubic-bezier(.4,.05,.2,1)', fill: 'both' },
-      );
-    });
-
-    setTimeout(() => {
-      then.querySelectorAll('.column').forEach((col) => {
-        const kept = [...col.querySelectorAll('.film[data-title]')]
-          .filter((r) => newer.has(r.dataset.title));
-        if (kept.length) return;
-        col.animate([{ opacity: 1 }, { opacity: 0 }],
-          { duration: EMPTY, easing: 'ease-in', fill: 'both' });
-      });
-      then.querySelectorAll('.column-head, .sizes').forEach((bit) => {
-        bit.animate([{ opacity: 1 }, { opacity: 0 }],
-          { duration: EMPTY, easing: 'ease-in', fill: 'both' });
-      });
-    }, TRAVEL + 300);
-
-    setTimeout(() => {
-      here.style.opacity = '';
-      here.animate([{ opacity: 0 }, { opacity: 1 }],
-        { duration: 420, easing: 'ease-out', fill: 'both' });
-      then.animate([{ opacity: 1 }, { opacity: 0 }],
-        { duration: 420, easing: 'ease-in', fill: 'both' });
-    }, TRAVEL + 300 + EMPTY);
-
-    setTimeout(() => {
-      then.remove();
-      fig.style.minHeight = '';
-      fig.style.position = '';
-      here.style.opacity = '';
-      delete fig.dataset.replaying;
-    }, TRAVEL + 300 + EMPTY + 520);
-  });
-}
-
 function settleInto(fig, before, moved) {
   if (!before.size || reduced) return 0;
   let shifted = 0;
@@ -988,242 +908,6 @@ function settleInto(fig, before, moved) {
         easing: 'cubic-bezier(.3,.9,.3,1)', fill: 'both' });
   });
   return shifted;
-}
-
-function panel(host, source, baseFilms) {
-  const state = { drop: [], add: [], keep: null, films: baseFilms.slice() };
-  let shown = null;
-  host.textContent = '';
-
-  const box = el('div', 'panel-box');
-  box.appendChild(el('h3', null, 'Analyse the lineup'));
-  box.appendChild(el('p', 'lede',
-    'Take films out, or put one in. The groups are worked out again each time.'));
-  const chips = el('div', 'chips');
-  box.appendChild(chips);
-
-  const row = el('div', 'row');
-  const field = el('input');
-  field.type = 'text';
-  field.placeholder = 'Add a film by title';
-  const addBtn = el('button', 'ghost', 'Add');
-  addBtn.type = 'button';
-  row.append(field, addBtn);
-  box.appendChild(row);
-  host.appendChild(box);
-
-  const say = el('div', 'panel-diff');
-  const fig = el('div', 'panel-figure');
-  const foot = el('p', 'panel-foot');
-  say.hidden = true;
-  host.append(say, fig, foot);
-
-  const fewer = el('div', 'panel-fewer');
-  fewer.hidden = true;
-
-  const ask_agent = el('div', 'panel-fewer panel-swap');
-  ask_agent.hidden = true;
-  ask_agent.appendChild(el('h3', null, 'Swap a film to reach more audiences'));
-  ask_agent.appendChild(el('p', 'lede',
-    'Slate drops a slot the lineup can spare and brings in something from '
-    + 'outside your list.'));
-  const swapRowEl = el('div', 'row');
-  const swapBtn = el('button', 'ghost', 'Suggest a swap');
-  swapBtn.type = 'button';
-  const swapSaid = el('span', 'fine');
-  swapRowEl.append(swapBtn, swapSaid);
-  ask_agent.appendChild(swapRowEl);
-  fewer.appendChild(el('h3', null, 'Fit it into fewer slots'));
-  fewer.appendChild(el('p', 'lede',
-    'If you only have room for some of these, Slate picks the set that '
-    + 'reaches the most separate audiences.'));
-  const frow = el('div', 'row');
-  frow.appendChild(el('span', 'fine', 'Keep'));
-  const pick = el('select');
-  const count = el('span', 'fine');
-  const findBtn = el('button', 'ghost', 'Find the best set');
-  findBtn.type = 'button';
-  frow.append(pick, count, findBtn);
-  fewer.appendChild(frow);
-  host.appendChild(fewer);
-  host.appendChild(ask_agent);
-
-  const drawChips = () => {
-    chips.textContent = '';
-    state.films.filter((t) => !state.drop.includes(t)).forEach((t) => {
-      const chip = el('button', 'chip');
-      chip.type = 'button';
-      chip.appendChild(document.createTextNode(t));
-      chip.appendChild(el('span', 'chip-x', '\u00d7'));
-      chip.onclick = () => {
-        state.drop = state.drop.concat(t);
-        state.keep = null;
-        drawChips();
-        drawSizes();
-        run();
-      };
-      chips.appendChild(chip);
-    });
-  };
-
-  const putBack = (title) => {
-    state.drop = state.drop.filter((x) => x !== title);
-    state.keep = null;
-    drawChips();
-    drawSizes();
-    run();
-  };
-
-  const drawSizes = () => {
-    const n = state.films.filter((t) => !state.drop.includes(t)).length;
-    const was = pick.value;
-    pick.textContent = '';
-    for (let k = n - 1; k >= 4; k -= 1) {
-      pick.appendChild(el('option', null, String(k)));
-    }
-    if (was && Number(was) < n) pick.value = was;
-    count.textContent = `of the ${n}`;
-    findBtn.disabled = n <= 4;
-  };
-
-  const run = async (opts) => {
-    const wantSwap = !!(opts && opts.swap);
-    say.textContent = '';
-    say.appendChild(el('p', null, 'Working it out'));
-    say.hidden = false;
-    try {
-      const body = { drop: state.drop, add: state.add };
-      if (source.slug) body.slug = source.slug;
-      else {
-        body.films = source.films;
-        if (source.entity_type) body.entity_type = source.entity_type;
-      }
-      if (state.keep) body.keep = state.keep;
-      if (wantSwap) body.swap = true;
-
-      const d = await ask('/api/panel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      say.textContent = '';
-      const works = d.films.map((f) => f.title)
-        .concat(d.dropped || [], d.added || []);
-      ((d.diff && d.diff.line) || '').split('. ').filter(Boolean)
-        .forEach((part, i, all) => {
-          const dot = part.endsWith('.') ? '' : '.';
-          const p = el('p');
-          withTitles(p, part + (i === all.length - 1 ? dot : '.'), works);
-          say.appendChild(p);
-        });
-
-      fewer.hidden = false;
-      ask_agent.hidden = false;
-
-      const before = new Map();
-      fig.querySelectorAll('.film[data-title]').forEach((row) => {
-        before.set(row.dataset.title, row.getBoundingClientRect());
-      });
-      fig.textContent = '';
-
-      const sec = chapter(d, null);
-      sec.classList.add('shown');
-      const head = sec.querySelector('.chapter-title');
-      if (head) head.remove();
-      const vline = sec.querySelector('.verdict-line');
-      if (vline) vline.remove();
-      const spend = sec.querySelector('.spend');
-      if (spend) spend.remove();
-      fig.appendChild(sec);
-      const moved = (d.diff && d.diff.moved) || [];
-
-      const shifted = settleInto(fig, before, moved);
-      const was = shown;
-      shown = d;
-
-      const back = sec.querySelectorAll('.taken-film');
-      back.forEach((b) => { b.onclick = () => putBack(b.textContent); });
-
-      foot.textContent = '';
-
-      if (was && !reduced) {
-        const again = el('button', 'ghost', 'Show what moved');
-        again.type = 'button';
-        again.onclick = () => replay(fig, was, d, moved);
-        foot.appendChild(again);
-      }
-
-      const mine = new Set(d.by_you || []);
-      const theirs = (d.dropped || []).filter((t) => !mine.has(t));
-      if (theirs.length) {
-        foot.appendChild(el('p', null, `Slate dropped: ${theirs.join(', ')}.`));
-      }
-      if (state.drop.length || state.add.length || state.keep) {
-        const reset = el('button', 'ghost', 'Reset to the real lineup');
-        reset.type = 'button';
-        reset.onclick = () => {
-          state.drop = []; state.add = []; state.keep = null;
-          state.films = baseFilms.slice();
-          drawChips(); drawSizes(); run();
-        };
-        foot.appendChild(reset);
-      }
-      drawSizes();
-
-      swapSaid.textContent = '';
-      if (d.agent) {
-        swapSaid.textContent = d.agent.swaps.length
-          ? `${d.agent.swaps[0].out} out, ${d.agent.swaps[0].in} in.`
-          : 'Nothing worth changing. Every candidate landed in a group the '
-            + 'lineup already covers.';
-        if (d.agent.swaps.length) {
-          state.films = d.films.map((f) => f.title);
-          state.drop = [];
-          state.add = [];
-          drawChips();
-        }
-      }
-    } catch (e) {
-      say.textContent = '';
-      fig.textContent = '';
-      failure(e, fig, () => run());
-    }
-  };
-
-  addBtn.onclick = () => {
-    const t = field.value.trim();
-    if (!t) return;
-    const here = state.films.some((f) => f.toLowerCase() === t.toLowerCase());
-    if (here) {
-      say.textContent = '';
-      say.appendChild(el('p', null, `${t} is already in the lineup.`));
-      say.hidden = false;
-      return;
-    }
-    state.add = state.add.concat(t);
-    state.films = state.films.concat(t);
-    state.keep = null;
-    field.value = '';
-    drawChips();
-    run();
-  };
-  field.onkeydown = (ev) => { if (ev.key === 'Enter') addBtn.onclick(); };
-  findBtn.onclick = () => { state.keep = Number(pick.value); run(); };
-  swapBtn.onclick = async () => {
-    swapBtn.disabled = true;
-    swapBtn.textContent = 'Testing candidates';
-    swapSaid.textContent = '';
-    try {
-      await run({ swap: true });
-    } finally {
-      swapBtn.disabled = false;
-      swapBtn.textContent = 'Suggest a swap';
-    }
-  };
-
-  drawChips();
-  drawSizes();
 }
 
 function swapRow(sw) {
@@ -1398,8 +1082,10 @@ function failure(err, out, retry) {
       'Qloo\u2019s data couldn\u2019t be retrieved, so there is no complete '
       + 'result to show. Nothing partial is displayed, because a half-read '
       + 'slate would look like a finding.',
-      [['Try again', retry, true],
-       ['See a measured lineup', () => { location.hash = '#cannes'; }]]));
+      document.getElementById('festivals')
+        ? [['Try again', retry, true],
+           ['See a measured lineup', () => { location.hash = '#cannes'; }]]
+        : [['Try again', retry, true]]));
     return;
   }
   out.appendChild(status('thin', 'This lineup can\u2019t be read.',
@@ -1424,69 +1110,4 @@ async function useExample() {
   } catch {  }
 }
 
-async function runOwn() {
-  const raw = $('own-input').value.split('\n').map((s) => s.trim()).filter(Boolean);
-  const out = $('own-result');
-  const btn = $('own-run');
-  out.textContent = '';
-
-  if (raw.length < 4) {
-    out.appendChild(status('thin', 'Add at least four titles.',
-      `Slate needs four to read a shape. You have ${raw.length}.`, []));
-    return;
-  }
-  if (raw.length > 24) {
-    out.appendChild(status('thin', 'That is more than twenty-four.',
-      `You have ${raw.length}. Remove a few and try again.`, []));
-    return;
-  }
-  const films = raw;
-
-  btn.disabled = true;
-  btn.textContent = 'Reading';
-  const waiting = el('div', 'waiting');
-  waiting.appendChild(el('span', 'pulse'));
-  const said = el('p', null, 'Looking up your titles');
-  waiting.appendChild(said);
-  out.appendChild(waiting);
-
-  const stages = [
-    [4000, 'Working out how they relate'],
-    [11000, 'Working out the groups'],
-    [18000, 'This is a new lineup, so it takes a little longer'],
-  ].map(([at, text]) => setTimeout(() => { said.textContent = text; }, at));
-
-  const box = $('own-input');
-  const body = { films, name: 'Your slate' };
-  if (box && box.dataset.entityType) body.entity_type = box.dataset.entityType;
-
-  try {
-    const d = await ask('/api/analyse', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    stages.forEach(clearTimeout);
-    out.textContent = '';
-    coverage(d, out);
-    const sec = chapter(d, null);
-    sec.classList.add('shown');
-    out.appendChild(sec);
-    const hook = el('div', 'panel');
-    out.appendChild(hook);
-    panel(hook, { films, entity_type: d.entity_type },
-      d.films.map((f) => f.title));
-    sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  } catch (e) {
-    stages.forEach(clearTimeout);
-    out.textContent = '';
-    failure(e, out, runOwn);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Find the shape';
-  }
-}
-
-$('own-run').onclick = runOwn;
-
-start();
+if (document.getElementById('festivals')) start();
