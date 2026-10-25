@@ -9,6 +9,7 @@ entities_*.json
 !.env.example
 
 *.md
+!README.md
 !.github/**/*.md
 
 data/ml-32m/

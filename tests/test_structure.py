@@ -1957,3 +1957,30 @@ def test_the_hero_action_outweighs_the_header_one():
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
     assert ".opening-actions .solid { font-size: 1rem;" in css
     assert ".deskbar-end .solid { font-size: 0.8125rem;" in css
+
+
+def test_the_readme_is_committed():
+    root = Path(__file__).resolve().parent.parent
+    assert (root / "README.md").exists()
+    assert (root / "LICENSE").exists(), "an open source licence is required"
+    ignore = (root / ".gitignore").read_text()
+    assert "!README.md" in ignore
+
+
+def test_the_readme_claims_only_what_was_measured():
+    text = (Path(__file__).resolve().parent.parent / "README.md").read_text()
+    flat = " ".join(text.split())
+    for claim in ("0.35", "0.24", "\u22120.650", "+0.251", "\u22120.498"):
+        assert claim in flat, claim
+    assert "Honest limits" in text
+    assert "could not answer" in flat, "the bridge test that failed"
+    assert "not attendance" in flat
+
+
+def test_the_group_header_is_legible_on_the_panel():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    for sel in (".column-what { font-size: 0.875rem; color: var(--panel-muted)",
+                ".taste-head { font-size: 0.75rem; color: var(--panel-muted)"):
+        assert sel in css, sel
+    at = css.index(".stage span em {")
+    assert "var(--panel-muted)" in css[at:css.index("}", at)], "the animations too"

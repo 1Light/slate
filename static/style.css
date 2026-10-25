@@ -152,7 +152,7 @@ a { color: inherit; }
   flex: none;
 }
 .column-size { font-size: 1.0625rem; font-weight: 500; color: var(--panel-bright); font-variant-numeric: tabular-nums; }
-.column-what { font-size: 0.875rem; color: var(--panel-faint); }
+.column-what { font-size: 0.875rem; color: var(--panel-muted); }
 
 .film { display: block; padding: 0 0 0 0.7rem; margin-left: -0.8rem; border-left: 2px solid transparent; font-size: 0.9375rem; line-height: 1.35; color: var(--panel-ink); }
 .film + .film { margin-top: 0.75rem; }
@@ -221,7 +221,7 @@ a { color: inherit; }
 .test .columns { background: var(--panel); border-radius: 8px; padding: var(--s2); }
 .test .columns .film { color: var(--panel-ink); }
 .test .columns .column-size { color: var(--panel-bright); }
-.test .columns .column-what { color: var(--panel-faint); }
+.test .columns .column-what { color: var(--panel-muted); }
 .test .columns .column-letter { color: var(--panel); background: var(--panel-bright); }
 
 .pairs, .bars-table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
@@ -389,7 +389,7 @@ a { color: inherit; }
   animation: card-slot var(--loop) ease-in-out infinite;
 }
 .stage span em {
-  font-style: normal; font-size: 0.75rem; color: var(--panel-faint);
+  font-style: normal; font-size: 0.75rem; color: var(--panel-muted);
 }
 .stage i {
   position: absolute; left: 0; top: 0; display: block;
@@ -621,7 +621,7 @@ body.workbench { background: var(--paper); }
 .taste-bar span { height: 3px; background: var(--panel-muted); }
 .taste-bar span.lead { background: var(--panel-bright); }
 .taste-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; }
-.taste-head { font-size: 0.75rem; color: var(--panel-faint); margin-bottom: 0.65rem; }
+.taste-head { font-size: 0.75rem; color: var(--panel-muted); margin-bottom: 0.65rem; }
 .taste-letter {
   display: inline-flex; align-items: center; justify-content: center;
   width: 1.05rem; height: 1.05rem; border-radius: 3px; margin-right: 0.3rem;
