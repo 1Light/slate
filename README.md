@@ -8,6 +8,8 @@ When you choose titles one at a time, several slots can end up reaching the same
 
 Built on Qloo's Insights API for the Qloo Agentic Hackathon 2026.
 
+![Twelve comedy shows in four groups, with a bridge and two outliers](docs/figure.png)
+
 ---
 
 ## The problem
