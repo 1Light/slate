@@ -61,12 +61,15 @@ METHOD = (
 )
 
 
-def _groups(clusters, nouns, mark=None) -> str:
-    mark = set(mark or [])
+def _groups(clusters, nouns, mark=None, skip=None) -> str:
+    mark, skip = set(mark or []), set(skip or [])
     rows = []
     for i, group in enumerate(clusters):
-        names = (list(group.get("films") or group.get("titles") or [])
-                 if isinstance(group, dict) else list(group))
+        names = [t for t in (list(group.get("films") or group.get("titles")
+                                   or []) if isinstance(group, dict)
+                             else list(group)) if t not in skip]
+        if not names:
+            continue
         titles = " &middot; ".join(
             f"<i>{_(t)}</i>" if t in mark else _(t) for t in names)
         rows.append(
@@ -92,29 +95,30 @@ def lineup_doc(shape: dict, name: str, slots: int | None) -> str:
     noun, nouns = shape.get("noun", "item"), shape.get("nouns", "items")
     n = len(films)
 
-    guts = (f"<p>These {n} {_(nouns)} separate into {len(clusters)} "
-            "groups.</p>" + _groups(clusters, nouns))
-
-    where = {f["title"]: f.get("cluster") for f in films}
     bridges = shape.get("bridges") or []
+    linked = {b["film"] for b in bridges}
+
+    guts = (f"<p>These {n} {_(nouns)} separate into {len(clusters)} "
+            "groups.</p>" + _groups(clusters, nouns, skip=linked))
+
     if bridges:
-        b = bridges[0]
-        joins = [letter(x) for x in (b.get("connects") or [])]
-        which = (f"group {joins[0]} and group {joins[1]}" if len(joins) == 2
-                 else "groups " + ", ".join(joins[:-1]) + f" and {joins[-1]}"
-                 if len(joins) > 2 else "other groups")
-        guts += ("<h2>What connects them</h2><p>" + _(b["film"])
-                 + " is a bridge. It sits in group "
-                 + letter(b.get("cluster", where.get(b["film"])))
-                 + f" and connects {which}, which nothing else here joins.</p>")
+        rows = "".join(
+            '<tr class="rule"><td class="k">'
+            + " &middot; ".join(letter(x) for x in (b.get("connects") or []))
+            + f'</td><td>{_(b["film"])}</td></tr>' for b in bridges)
+        guts += ("<h2>Bridges</h2><p>Each bridge is close to titles in more "
+                 "than one group, so it connects them instead of fitting "
+                 "into just one.</p>"
+                 f'<table class="groups">{rows}</table>')
 
     alone = shape.get("isolated") or []
     if alone:
         guts += ("<h2>What stands alone</h2><p>" + _(alone[0]["film"])
-                 + " is an outlier. It is weakly tied to its own group and "
-                 "covers taste nothing else here covers.</p>")
+                 + " is an outlier. It covers taste nothing else here "
+                 "covers.</p>")
 
-    spare = (shape.get("tightest") or [])[:3]
+    spare = [p for p in (shape.get("tightest") or [])
+             if p["a"] not in linked and p["b"] not in linked][:3]
     if spare:
         rows = "".join(
             f'<tr class="rule"><td>{_(p["a"])} &nbsp;&middot;&nbsp; '

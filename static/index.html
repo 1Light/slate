@@ -16,10 +16,13 @@
   <div class="band">
     <span class="wordmark">Slate</span>
     <nav class="tabs">
-      <a href="#festivals">Film festivals</a>
-      <a href="#views">Other media</a>
-      <a href="#checked">The evidence</a>
-      <a href="/app">Try it</a>
+      <span class="sections">
+        <a href="#festivals">Film festivals</a>
+        <a href="#asks">What Slate can do</a>
+        <a href="#views">Other uses</a>
+        <a href="#checked">The evidence</a>
+      </span>
+      <a href="/app" class="go">Try it</a>
     </nav>
   </div>
 </header>
@@ -28,12 +31,14 @@
   <div class="split">
     <div>
       <h1>A lineup is not a list. It is a handful of rooms.</h1>
-      <p class="deck">Pick twenty films one at a time and you can still end up
-        reaching the same audience five times over. Slate reads the set as a
-        whole and shows which items reach the same people, which one reaches people
-        nothing else does, and whether anything connects them.</p>
-      <p class="deck">It works on anything Qloo can rank. Tested on films,
-        music, books, podcasts and TV shows.</p>
+      <p class="deck">When you choose titles one at a time, several slots can
+        end up reaching the same audience. Slate looks at the lineup as a whole
+        and shows which titles reach the same people, which reach audiences
+        nothing else does, and which appeal to more than one audience
+        group.</p>
+      <p class="deck">Built for lineups where a limited number of slots must
+        be chosen from a larger pool. It works on anything Qloo can rank:
+        tested on films, music, books, podcasts and TV shows.</p>
       <div class="opening-actions">
         <a class="solid" href="/app">Try it</a>
       </div>
@@ -46,27 +51,28 @@
 
 <span id="festivals" class="anchor"></span>
 <section class="group-head band reveal">
-  <h2>Film festivals</h2>
-  <p class="lede">Here is what Slate sees in a lineup, using three real film
-    festivals: Berlinale 2024 in Germany, Cannes 2023 in France and Sundance
-    2024 in the United States.</p>
+  <h2>Film festivals are the first use case</h2>
+  <p class="lede">Film festival programmers face exactly the problem Slate is
+    built for: many possible titles, a fixed number of slots, and no simple way
+    to see what each title adds to the lineup as a whole. Here is what Slate
+    sees in three real festivals: Berlinale 2024 in Germany, Cannes 2023 in
+    France and Sundance 2024 in the United States.</p>
 
   <div class="terms">
     <div>
       <div class="stage small" id="stage-bridge" aria-hidden="true"></div>
       <h4>Bridge</h4>
-      <p>A film that reaches two different crowds at once. It is the overlap
-        between them, so someone who came for one group finds something next
-        door. Instead of programming two separate nights, one slot covers
-        both.</p>
+      <p>A film close in taste to two different groups at once. It sits
+        between them, so people drawn to one are more likely to find something
+        in the other. Instead of needing a separate film for each group, one
+        slot can reach both.</p>
     </div>
     <div>
       <div class="stage small" id="stage-outlier" aria-hidden="true"></div>
       <h4>Outlier</h4>
-      <p>A film that covers an audience with a distinct taste from the rest of
-        the lineup. If it sits in a group, it is the one most weakly tied to
-        it: it covers some of that group&rsquo;s audience, and some that
-        nothing else in the lineup covers.</p>
+      <p>A film that covers an audience with a distinct taste from the rest
+        of the lineup. It covers some of its group&rsquo;s audience, and some
+        that nothing else in the lineup covers.</p>
     </div>
   </div>
 </section>
@@ -79,17 +85,49 @@
 
 <section class="agent band reveal" id="agent" hidden>
   <h2>Slate can also propose the change</h2>
-  <p class="lede">It takes one of the slots the lineup can spare and adds
-    something that reaches a room the lineup is missing. Every candidate is
-    tested against the whole set, which is rebuilt from scratch each time, so
-    the groups are worked out again rather than one slot changing. A change
-    is kept only if the measured shape improves. Finding nothing is an
-    allowed answer.</p>
+  <p class="lede">Every candidate is added to the full lineup and the groups
+    are worked out again from scratch, so nothing is judged on its own. A swap
+    is proposed only if the result is measurably better. If nothing clears
+    that bar, Slate reports no change.</p>
   <div id="agent-body"></div>
 </section>
 
+<span id="asks" class="anchor"></span>
+<section class="asks band reveal">
+  <h2>What Slate can do</h2>
+  <p class="lede">Slate answers four questions about a lineup you are working
+    on.</p>
+  <div class="ask-list">
+    <div>
+      <h4>Fit it into fewer slots</h4>
+      <p>Reduce the number of slots and find the best set to keep.</p>
+    </div>
+    <div>
+      <h4>Find a title that adds a new group</h4>
+      <p>Look for a new title that reaches a group the lineup is missing.</p>
+    </div>
+    <div>
+      <h4>Check a new title against the lineup</h4>
+      <p>Propose a title and see where it sits and what it changes.</p>
+    </div>
+    <div>
+      <h4>Compare titles before adding</h4>
+      <p>Compare several candidates and see which set does most for the
+        lineup.</p>
+    </div>
+  </div>
+  <p class="lede asks-foot">Each one gives you a brief you can download.</p>
+</section>
+
 <section class="views band reveal" id="views" hidden>
-  <h2>Slate also reads music, books, podcasts and TV shows</h2>
+  <h2>Other uses</h2>
+  <p class="lede">The same problem shows up anywhere people have to choose a
+    small lineup from a much larger pool. A broadcaster might be deciding what
+    to put on its schedule, an airline selecting from a larger entertainment
+    catalogue, or a conference choosing which speakers make the final
+    programme.</p>
+  <p class="lede">Slate has been tested on films, music, books, podcasts and
+    TV shows.</p>
   <div class="view-tabs" id="view-tabs" role="tablist"></div>
   <div id="view-body"></div>
 </section>
@@ -103,14 +141,15 @@
   <div class="foot-top">
     <div class="foot-brand">
       <p class="wordmark">Slate</p>
-      <p>Shows which items in a lineup reach the same people. Films, music,
-        books, podcasts and TV shows.</p>
+      <p>Shows what each title contributes to a lineup as a whole, when the
+        number of slots is limited. Films, music, books, podcasts and TV
+        shows.</p>
     </div>
     <div>
       <h4>Product</h4>
       <a href="/app">Try it</a>
       <a href="#festivals">Film festivals</a>
-      <a href="#views">Other media</a>
+      <a href="#views">Other uses</a>
     </div>
     <div>
       <h4>How it works</h4>
@@ -124,7 +163,7 @@
     </div>
   </div>
   <div class="foot-bottom">
-    <span>Slate, 2026</span>
+    <span>Slate, 2026 &middot; built on Qloo</span>
     <span>Slate&rsquo;s groups are inferred from taste data, not ticket sales.</span>
   </div>
 </footer>

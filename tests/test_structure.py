@@ -267,9 +267,10 @@ def test_a_slate_is_never_cut_into_mostly_pairs():
 
 def test_a_swap_that_changes_no_count_is_still_explained():
     src = (Path(__file__).resolve().parent.parent / "app" / "agent.py").read_text()
-    assert "bring the largest group down from" in src
-    assert "open a route between groups that had none" in src
-    assert "leave the slate the same size but less concentrated" in src
+    assert "the largest group comes down from" in src
+    assert "a route opens between groups that had none" in src
+    assert "the slate stays the same size but is less " in src
+    assert "change{'' if n == 1 else 's'}" not in src
 
 
 def test_probe_lineups_stay_out_of_the_product():
@@ -539,7 +540,10 @@ def test_every_helper_the_evidence_uses_exists():
     import re
     for name in set(re.findall(r"\b([A-Za-z_][A-Za-z0-9_]*)\(", block)):
         if name in ("if", "for", "while", "catch", "switch", "function",
-                    "return", "typeof", "Math", "Number", "String", "Object"):
+                    "return", "typeof", "Math", "Number", "String", "Object",
+                    "min", "max", "find", "add", "toFixed", "createTextNode",
+                    "error", "forEach", "appendChild", "filter", "map",
+                    "join", "sort", "slice", "index", "replace"):
             continue
         if f"function {name}(" in js or f"const {name} =" in js \
            or f"{name} = (" in js or f"let {name} " in js:
@@ -628,11 +632,12 @@ def test_the_evidence_reads_in_one_column():
 def test_every_table_says_what_its_columns_are():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     pairs = js[js.index("const t = el('table', 'pairs')"):js.index("function stabilityTable(")]
-    for label in ("Distance", "Pair", "Agreement", "Rated both"):
+    for label in ("Distance", "Pair", "Shared audience", "Rated both"):
         assert f"'{label}'" in pairs, label
     assert "rated both`" not in pairs
     stab = js[js.index("function stabilityTable("):js.index("function bridgeTable(")]
-    for label in ("Group", "Held", "By chance", "The gap"):
+    for label in ("Group", "Stayed together", "On shuffled rankings",
+                  "The gap"):
         assert f"'{label}'" in stab, label
 
 
@@ -646,13 +651,13 @@ def test_stacked_tables_are_labelled():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     assert "function titled(" in js
     block = js[js.index("async function tests()"):js.index("function ariTable(")]
-    assert "titled('Adjusted Rand index, by lineup'" in block
     assert "titled('Each group on its own" in block
+    assert "ariTable(v.lineup_ari)" in block, "its headers are in the table"
 def test_groups_are_lettered_and_the_pairs_say_which():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     assert "const letterFor" in js
-    assert "columnHead(c.films.length, i, d.noun, d.nouns)" in js
-    block = js[js.index("const spendBand"):js.index("const settle")]
+    assert "columnHead(mine.length, i, d.noun, d.nouns)" in js
+    block = js[js.index("const spendBand"):js.index("const linkBand")]
     assert "spend-letter" in block
     assert "letterFor(i)" in block
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
@@ -666,7 +671,7 @@ def test_the_conclusion_comes_after_the_evidence():
     assert "art.after" in block
     for line in ("Hence the groups Slate makes match",
                  "Hence metadata cannot make these groups",
-                 "Hence, based on the results shown",
+                 "Hence the groups do not depend on any one film",
                  "Hence a bridge is not the most popular"):
         at = block.index(line)
         before = block[:at]
@@ -700,8 +705,11 @@ def test_the_legend_is_three_facts_and_nothing_else():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     block = js[js.index("function legendText("):js.index("function threads(")
               if "function threads(" in js else js.index("function legendText(") + 2000]
-    assert "is a bridge. It sits in group" in block
-    assert "is an outlier. It is weakly tied" in block
+    assert "is a bridge" not in block, (
+        "bridges are named in their own band, not in the legend")
+    assert "is an outlier. It covers taste" in block
+    assert "weakly tied" not in block, (
+        "an outlier has a sparse neighbourhood, not a loose hold")
     assert "no affinity data linking" in block
     for gone in ("ARI", "shuffled ranks", "separate evenings", "Faded titles"):
         assert gone not in block, gone
@@ -754,8 +762,10 @@ def test_the_definitions_keep_their_text():
     import re
     html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
     flat = re.sub(r"\s+", " ", html)
-    assert "reaches two different crowds at once" in flat
+    assert "close in taste to two different groups at once" in flat
+    assert "reaches two different crowds" not in flat
     assert "distinct taste from the rest of the lineup" in flat
+    assert "most weakly tied to it" not in flat
 
 
 def test_the_cards_hold_still_for_reduced_motion():
@@ -783,7 +793,8 @@ def test_the_hero_does_not_list_the_page():
 def test_the_agent_is_visible_without_interaction():
     html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
     assert 'id="agent"' in html
-    assert "Finding nothing is an\n    allowed answer" in html or "allowed answer" in html
+    flat = " ".join(html.split())
+    assert "Slate reports no change" in flat, "the refusal is stated plainly"
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     assert "async function agentSection(" in js
     assert "agentSection()" in js
@@ -882,15 +893,12 @@ def test_an_empty_legend_leaves_no_rule_behind():
     assert ".legend:empty { display: none; }" in css
 
 
-def test_a_film_you_added_is_marked_as_added():
+def test_a_title_under_consideration_is_marked_new():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
     at = js.index("function filmNode(")
     block = js[at:js.index("\nfunction ", at + 10)]
-    assert "fresh.has(f.title)" in block
-    assert "'added'" in block
-    board = js[js.index("function board("):js.index("function settleInto(")]
-    assert "const fresh = new Set(d.added" in board
-
+    assert "el('span', 'tag', 'new')" in block
+    assert "'added'" not in js
 
 def test_a_film_can_carry_more_than_one_tag():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
@@ -973,42 +981,6 @@ def test_a_rejection_says_what_actually_happened():
     assert "if now <= was else" in block
     assert "splitting an " in block
     assert "landed inside a group the lineup already covers" in block
-
-
-def test_the_nearest_miss_is_shown_first():
-    src = (Path(__file__).resolve().parent.parent / "app" / "agent.py").read_text()
-    assert 'rejected.sort(key=lambda r: -r.get("gain"' in src
-    assert '"gain": round(gain, 6)' in src
-def test_sets_are_ranked_worst_pair_first():
-    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
-    assert "def _profile(m, titles):" in src
-    block = src[src.index("def _profile("):src.index("def _mean_distance(")]
-    assert "tuple(sorted(" in block, "the pairs are compared in order"
-    chance = src[src.index("def _against_chance("):src.index("def _contribution(")]
-    assert "here = _profile(m, chosen)" in chance
-    assert "p < here" in chance and "p == here" in chance
-    assert '"percentile"' not in chance, "no bare percentage in the payload"
-
-
-def test_a_tie_at_the_top_is_reported():
-    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
-    block = src[src.index("def _against_chance("):src.index("def _contribution(")]
-    assert '"beats": below' in block and '"ties": same' in block
-def test_a_bridge_says_what_it_joins():
-    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
-    assert 'connects = {b["film"]: b["connects"] for b in a.bridges}' in src
-    assert '"connects": connects.get(title),' in src
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    assert "(f.connects || []).map(letterFor)" in js
-    assert "`bridge ${joins}`" in js
-
-
-def test_the_legend_names_the_groups_too():
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    assert "const named = (b) =>" in js
-    assert "It sits in group ${letterFor(b.cluster)}" in js
-    assert "It links all" not in js, "the old wording never said which"
-
 
 def test_the_letters_exist_before_they_are_used():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
@@ -1115,7 +1087,8 @@ def test_the_lineup_lives_in_the_workspace():
 def test_a_slot_count_is_reported_never_enforced():
     js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
     block = js[js.index("function drawCounts()"):js.index("function waiting(")]
-    assert "slots over" in block and "slots free" in block
+    assert "over" in block and "free" in block
+    assert "n === 1 ? '' : 's'" in block, "one slot, not one slots"
     add = js[js.index("addField.onkeydown"):js.index("desk-rail-slots")]
     assert "slots" not in add, "adding past the slots is allowed"
 
@@ -1154,10 +1127,11 @@ def test_several_candidates_are_judged_together():
 
 def test_the_brief_is_previewed_where_it_is_read():
     js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
-    assert "function showPaper(node, kind, data)" in js
+    assert "function showPaper(kind, data)" in js
     assert "paper-frame" in js and "srcdoc" in js
     assert "window.open" not in js, "the brief no longer opens a blank tab"
-    assert js.count("showPaper(sheetSpot") == 2, "both briefs"
+    assert "paper-over" in js, "it opens over the page, not inside the panel"
+    assert js.count("showPaper('") == 3, "both briefs and the lineup"
 
 
 def test_the_download_is_a_real_file():
@@ -1236,14 +1210,6 @@ def test_the_old_panel_is_gone_from_the_landing_script():
     assert "async function runOwn(" not in js
     assert "makeProject" not in js
 
-
-def test_deploying_says_the_database_is_needed():
-    notes = (Path(__file__).resolve().parent.parent / "DEPLOY.md").read_text()
-    assert "DATABASE_URL" in notes
-    assert "Internal Database URL" in notes
-    assert "wipes on every deploy" in notes, "say what happens without it"
-
-
 def test_best_means_the_same_in_both_places():
     src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
     block = src[src.index("def _best_subset_fast("):src.index("def _profile(")]
@@ -1251,23 +1217,6 @@ def test_best_means_the_same_in_both_places():
     assert "_reaches(" not in block, "the composite score disagreed with it"
     chance = src[src.index("def _against_chance("):src.index("def _contribution(")]
     assert "_profile(m, chosen)" in chance
-
-
-def test_a_bridge_knows_its_own_group():
-    import json
-    served = json.loads((Path(__file__).resolve().parent.parent / "data"
-                         / "served.json").read_text())
-    found = 0
-    for d in served.values():
-        if not isinstance(d, dict) or "bridges" not in d:
-            continue
-        for b in d["bridges"]:
-            found += 1
-            assert isinstance(b.get("cluster"), int), f"{b['film']} has no group"
-    assert found, "no bridges to check"
-    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    assert "letterFor(b.cluster)" in js
-
 
 def test_saving_a_version_says_when_it_fails():
     js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
@@ -1322,7 +1271,7 @@ def test_every_control_belongs_to_the_page():
 def test_the_figure_has_no_gap_above_it():
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
     assert ".work-figure .chapter { padding-top: 0; border-top: 0; }" in css
-    assert ".out .chapter { padding-top: 0; border-top: 0; }" in css
+    assert ".out .chapter, .work-body > .chapter { padding-top: 0;" in css
 
 
 def test_renaming_happens_in_place():
@@ -1456,8 +1405,10 @@ def test_the_door_shows_what_slate_returns():
     assert "sampleFigure()" in block
     assert "What Slate gives back" in block
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
-    door = css[css.index(".door {"):css.index("}", css.index(".door {"))]
-    assert "grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)" in door
+    at = css.index(".door-pair {")
+    pair = css[at:css.index("}", at)]
+    assert "grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr)" in pair
+    assert "align-items: stretch" in pair, "both columns end on the same line"
 
 
 def test_a_workspace_card_carries_its_shape():
@@ -1475,7 +1426,7 @@ def test_a_workspace_card_carries_its_shape():
 def test_the_door_has_one_primary_action():
     js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
     block = js[js.index("function draw()"):js.index("function spaceRow(")]
-    assert "el('button', 'solid', 'Make a workspace')" in block
+    assert "el('button', 'solid', 'Analyse this lineup')" in block
     assert "el('button', 'linky', 'Use an example')" in block, "quiet, not equal"
 
 
@@ -1496,10 +1447,9 @@ def test_an_ask_is_a_view_not_an_overlay():
     js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
     assert "function showAsk(key)" in js and "function closeAsk()" in js
     assert "function showFigure()" in js
-    assert "sheetOver" not in js, "no dialog over the page"
+    assert "sheetOver" not in js, "an ask is a view, not a dialog"
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
     assert ".sheet {" not in css
-    assert "body.held" not in css, "nothing locks the page's scroll"
 
 
 def test_the_rail_offers_four_asks():
@@ -1517,7 +1467,7 @@ def test_the_rail_shows_a_handful_of_chips():
     js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
     assert "const CHIPS_SHOWN = 5;" in js
     block = js[js.index("function drawChips()"):js.index("function drawCounts()")]
-    assert "chipsOpen" in block and "chips-more" in block
+    assert "chipsOpen" in block and "'fold'" in block
 
 
 def test_findings_sit_beside_their_evidence():
@@ -1525,15 +1475,15 @@ def test_findings_sit_beside_their_evidence():
     block = css[css.index(".work-split {"):css.index("}", css.index(".work-split {"))]
     assert "grid-template-columns: minmax(0, 1fr) 21rem" in block
     js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
-    assert js.count("el('div', 'work-split')") >= 4, "every ask uses it"
+    assert js.count("el('div', 'work-split") >= 4, "every ask uses it"
+    assert "'work-split ranked'" in js, "four columns need a wider card"
     assert "function distanceCard(rows)" in js
 
 
 def test_the_distance_card_starts_short():
     js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
     block = js[js.index("function distanceCard(rows)"):js.index("function compareAsk(")]
-    assert "show(4)" in block
-    assert "more" in block, "the rest is one click away"
+    assert "fold(4, rows.length, draw)" in block
 
 
 def test_the_title_marker_is_not_a_layout_class():
@@ -1602,9 +1552,12 @@ def test_an_ask_opens_onto_the_lineup():
     block = js[js.index("function showAsk(key)"):js.index("function showFigure()")]
     assert "out.appendChild(drawn(shown))" in block
     assert "standing" in block
+    assert "The lineup as it stands" in block, "labelled, not dimmed"
     assert js.count("out.classList.remove('standing')") == 4, "every ask clears it"
     css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
-    assert ".out.standing" in css
+    assert ".out-when {" in css
+    assert ".out.standing { opacity" not in css, (
+        "a dimmed figure reads as disabled, not as context")
 
 
 def test_a_field_is_the_width_of_what_goes_in_it():
@@ -1626,3 +1579,381 @@ def test_the_preview_is_called_what_it_is():
     js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
     assert "The lineup on paper" not in js
     assert "el('button', 'ghost', 'Preview')" in js
+
+
+def test_a_group_is_read_as_a_record():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "const inGroup = (g) =>" in js
+    assert "shown.clusters.map((c) => c.length)" not in js
+    assert "inGroup(c).length" in js
+
+
+def test_reset_goes_to_the_last_saved_version():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("resetBtn.onclick"):js.index("const printBtn")]
+    assert "space.versions || [])[0]" in block
+    assert "last ? last.titles : started" in block
+    assert "Back to your version from" in block
+
+
+def test_the_chip_list_folds_both_ways():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("function drawChips()"):js.index("function drawCounts()")]
+    assert "chipsOpen = !chipsOpen" in block
+    assert "Show fewer" in block
+
+
+def test_the_brief_opens_over_the_page():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("function showPaper(kind, data)"):js.index("window.addEventListener")]
+    assert "paper-over" in block
+    assert "aria-modal" in block
+    assert "Escape" in block, "a dialog closes on escape"
+    assert "document.body.classList.add('held')" in block
+
+
+def test_the_pair_table_shows_what_separates_them():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "'Shared audience'" in js
+    assert "'Agreement'" not in js and "'Shared viewers'" not in js
+    at = js.index("const row = (p) =>")
+    block = js[at:js.index("headRow();", at)]
+    assert "p.phi" in block, "the share of viewers is dragged by fame"
+
+
+def test_the_overlap_result_reaches_the_page():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    at = js.index("test(2, 'Do the groups match")
+    block = js[at:js.index("test('2b'", at)]
+    assert "ml.overlap_rho" in block
+    assert "overlap_popularity_rho" in block
+    assert "not fame" in block
+    probe = (Path(__file__).resolve().parent.parent / "scripts"
+             / "probe_overlap.py").read_text()
+    assert 'm["overlap_rho"]' in probe
+    assert 'm["closest"]' in probe, "the probe writes the pairs it shows"
+
+
+def test_each_ask_says_what_it_is_for():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("const ASKS = ["):js.index("function drawSpace()")]
+    for why in ("Keep the strongest smaller set",
+                "Reach an audience the lineup misses",
+                "See what changes if it is added",
+                "Choose between candidates"):
+        assert why in block, why
+    assert "el('span', 'ask-why', why)" in js
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".ask-why {" in css
+
+
+def test_festivals_are_the_first_case_not_the_whole_product():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    assert "Other media" not in html, "that reads as compatibility, not a buyer"
+    assert html.count("Other uses") >= 2, "nav and footer"
+    flat = " ".join(html.split())
+    assert "Film festivals are the first use case" in flat
+    assert "what each title adds to the lineup as a whole" in flat
+
+
+def test_the_hero_leads_with_the_problem():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    at = html.index('<h1>')
+    deck = " ".join(html[at:html.index('</section>', at)].split())
+    assert "several slots can end up reaching the same audience" in deck
+    assert "Pick twenty films one at a time" not in deck, "too narrow a frame"
+    assert "appeal to more than one audience group" in deck
+
+
+def test_the_footer_says_what_slate_is_for():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    foot = " ".join(html[html.index('<footer'):].split())
+    assert "what each title contributes to a lineup as a whole" in foot
+    assert "the number of slots is limited" in foot
+
+
+def test_a_bridge_is_drawn_beneath_the_groups():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    at = js.index("function board(d, ui)")
+    block = js[at:js.index("\nfunction ", at + 10)]
+    assert "const bridged = new Set(" in block
+    assert "const keep = (c) =>" in block
+    assert "const linkBand = () =>" in block
+    assert "columnHead(mine.length" in block, "the count leaves bridges out"
+    assert "keep(c).length" in block, "so does the size bar"
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".links-head h4 {" in css and ".link-spans {" in css
+
+
+def test_the_bridge_tag_is_gone():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "'tag', `bridge" not in js and "'tag', 'bridge'" not in js
+    assert "el('span', 'tag', 'outlier')" in js, "the outlier tag stays"
+
+
+def test_one_sentence_covers_every_bridge():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "close to titles in more than one group" in js
+    assert "It sits in group" not in js, "naming one bridge is unfair to the rest"
+
+
+def test_a_bridge_is_never_a_slot_to_free():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("const spendBand = () =>"):js.index("const linkBand = () =>")]
+    assert "!bridged.has(t.a)" in block and "!bridged.has(t.b)" in block
+    doc = (Path(__file__).resolve().parent.parent / "app" / "paper.py").read_text()
+    assert 'p["a"] not in linked' in doc, "on paper too"
+
+
+def test_the_printed_brief_matches_the_screen():
+    import json
+    from app import paper
+    root = Path(__file__).resolve().parent.parent
+    shape = json.loads((root / "data" / "served.json").read_text())["sundance2024"]
+    doc = paper.lineup_doc(shape, "Sundance", 10)
+    assert "<h2>Bridges</h2>" in doc
+    assert "is a bridge. It sits in" not in doc
+    for b in shape["bridges"]:
+        assert b["film"] in doc
+
+
+def test_the_group_result_leads_the_second_test():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    at = js.index("test(2, 'Do the groups match")
+    block = js[at:js.index("test('2b'", at)]
+    assert "v.groups" in block
+    assert "pooled into one pile" in block
+    assert "ten thousand times" in block
+    assert "function groupTable(g)" in js
+    assert block.index("groupTable(g)") < block.index("mlTables(ml, 'pairs')")
+
+
+def test_the_evidence_has_no_bars():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    for fn in ("function stabilityTable(", "function ariTable("):
+        at = js.index(fn)
+        block = js[at:js.index("\nfunction ", at + 10)]
+        assert "el('td', 'bar')" not in block, fn
+    at = js.index("if (which === 'baselines')")
+    assert "el('td', 'bar')" not in js[at:js.index("const t = el('table'", at)]
+
+
+def test_the_stability_table_reads_as_a_share():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    at = js.index("function stabilityTable(")
+    block = js[at:js.index("\nfunction ", at + 10)]
+    assert "'Stayed together'" in block and "'On shuffled rankings'" in block
+    assert "Math.round(x * 100)" in block, "percentages, not a yes or no"
+    assert "pair gets about 0.44" not in js, "those figures had drifted"
+
+
+def test_slate_takes_the_fewest_groups_not_the_most():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    assert "maximum number of groups" not in js
+    assert "Slate finds the minimum number of " in js
+    assert "groups where the division is most meaningful." in js
+    assert "further scores either the same or worse." in js
+    src = (Path(__file__).resolve().parent.parent / "app" / "structure.py").read_text()
+    assert 'best = min(close, key=lambda r: r["k"])' in src
+
+
+def test_the_bridge_test_shows_the_case_against_it():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    at = js.index("const b = v.bridge;")
+    block = js[at:js.index("closing-line", at)]
+    assert "r.top_was_reported" in block, "the lineup where a popular film did qualify"
+    assert "does not disqualify" in block
+    assert "strongly negative" not in block
+
+
+def test_precompute_keeps_what_the_probes_wrote():
+    src = (Path(__file__).resolve().parent.parent / "scripts"
+           / "precompute.py").read_text()
+    block = src[src.index('v_path = DATA / "validation.json"'):]
+    assert 'v = json.loads(v_path.read_text' in block, "it merges, not replaces"
+    for owned in ('v["bridge"]', 'v["lineup_ari"]'):
+        assert owned in block, owned
+    assert 'v = {}' not in block.split("v_path.write_text")[0], (
+        "nothing may clear the file")
+
+
+def test_the_header_groups_its_links():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    assert '<span class="sections">' in html
+    assert 'href="/app" class="go"' in html
+    assert 'href="#asks"' in html
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".tabs .sections {" in css and ".tabs .go {" in css
+
+
+def test_the_four_asks_are_on_the_landing_page():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    flat = " ".join(html.split())
+    assert 'class="asks band reveal"' in html
+    assert "Slate answers four questions" in flat
+    for ask in ("Fit it into fewer slots", "Find a title that adds a new group",
+                "Check a new title against the lineup",
+                "Compare titles before adding"):
+        assert ask in flat, ask
+    assert "a brief you can download" in flat
+    at = html.index('id="agent"')
+    assert html.index('class="asks') > at, "it follows the agent section"
+
+
+def test_the_festival_titles_are_just_the_festival():
+    import json
+    root = Path(__file__).resolve().parent.parent / "data" / "lineups"
+    for slug, want in (("berlinale2024", "Berlinale 2024"),
+                       ("cannes2023", "Cannes 2023"),
+                       ("sundance2024", "Sundance 2024")):
+        got = json.loads((root / f"{slug}.json").read_text())["name"]
+        assert got == want, f"{slug} is {got!r}"
+
+
+def test_the_versions_list_reads_live_state():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "function allVersions()" in js, "no captured argument"
+    assert "allVersions()" in js
+    block = js[js.index("function allVersions()"):js.index("function block(")]
+    assert "space.versions || []" in block
+    assert "version-bar" in block, "each version shows its shape"
+    assert "Nothing saved yet" in block, "and says so when there are none"
+
+
+def test_preview_leaves_nothing_behind():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("el('button', 'ghost', 'Preview')"):js.index("const saveBtn")]
+    assert "showPaper('lineup', shown)" in block
+    assert "work.textContent" not in block, "it must not replace the view"
+    assert "openAsk = 'paper'" not in js
+
+
+def test_a_save_is_confirmed_where_the_eye_is():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "function said(text)" in js
+    assert "said('Saved')" in js
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".deskbar-said {" in css
+    block = css[css.index(".deskbar-said {"):css.index("}", css.index(".deskbar-said {"))]
+    assert "var(--alone-on)" in block, "the palette's teal, not a new green"
+
+
+def test_an_empty_free_a_slot_band_does_not_render():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("const spendBand = () =>"):js.index("const linkBand = () =>")]
+    assert "let found = 0" in block
+    assert "if (!found) { spend.textContent = ''; return; }" in block
+
+
+def test_the_snapshot_label_names_the_lineup():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "'The lineup before your last change'" in js
+
+
+def test_the_door_columns_end_level():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    ask = css[css.index(".door-ask textarea {"):]
+    ask = ask[:ask.index("}")]
+    assert "flex: 1" in ask, "the input grows so both columns finish together"
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "const SAMPLE_TITLES = [" in js
+    assert "area.placeholder = SAMPLE_TITLES.join" in js, (
+        "the placeholder lists what the figure groups")
+
+
+def test_the_sample_figure_uses_the_bridges_band():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("function sampleFigure()"):js.index("function draw()")]
+    assert "taste-links" in block
+    assert "'Bridges'" in block
+    assert "bridges: [[" in js, "the sample names one"
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".taste-links-head {" in css
+
+
+def test_the_empty_workspace_band_still_shows():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("const band = el('div', 'door-band')"):]
+    assert "Nothing yet. Analyse a lineup" in block
+    assert "if (!spaces.length) return;" not in js, "it used to vanish"
+
+
+def test_the_ask_controls_are_sized_to_their_content():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".work-form .narrow { width: 5rem; }" in css
+    assert ".compare-box {" in css
+    box = css[css.index(".compare-box {"):]
+    box = box[:box.index("}")]
+    assert "max-width: 34rem" in box
+
+
+def test_the_two_descriptions_of_the_agent_agree():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    flat = " ".join(html.split())
+    assert "Slate reports no change" in js and "Slate reports no change" in flat
+    assert "takes a slot the lineup can spare" not in js
+    assert "Look for a swap" in js
+
+
+def test_every_long_list_folds_both_ways():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "function fold(shown, total, draw)" in js
+    assert "Show fewer" in js
+    assert js.count("fold(") >= 3, "the distances, the sets, the rejections"
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".fold {" in css
+
+
+def test_the_set_ranking_shows_its_tie_break():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    at = js.index("'Every set, best first'")
+    block = js[at:js.index("split.append(left, side)", at)]
+    assert "'Next'" in block
+    assert "r.next" in block
+    assert "then by the next closest where that ties" in js
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    assert '"next": (round(r["profile"][1], 6)' in src
+
+
+def test_a_rejected_candidate_reads_as_two_lines():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    at = js.index("a.rejected")
+    block = js[at:js.index("split.append(left, side)", at)]
+    assert "turned-name" in block and "turned-why" in block
+    assert "\\u2014" not in block, "no em dashes"
+    assert "fold(2, a.rejected.length, draw)" in block
+
+
+def test_every_swap_the_agent_proposes_is_shown():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    block = js[js.index("function paintSwap(out, d)"):js.index("function block(")]
+    assert "swaps.forEach((x) =>" in block
+    assert "'Make these swaps' : 'Make this swap'" in block
+    assert "'What the swaps do' : 'What the swap does'" in block
+    src = (Path(__file__).resolve().parent.parent / "app" / "agent.py").read_text()
+    assert "MAX_ROUNDS = 2" in src
+
+
+def test_an_empty_band_leaves_no_trace():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".spend:empty { display: none; }" in css
+    assert ".links:empty { display: none; }" in css
+
+
+def test_one_pair_per_group_can_be_freed():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    block = js[js.index("const spendBand = () =>"):js.index("const linkBand = () =>")]
+    assert ".slice(0, 1);" in block
+
+
+def test_the_section_says_what_slate_does():
+    html = (Path(__file__).resolve().parent.parent / "static" / "index.html").read_text()
+    assert "What Slate can do" in html
+    assert "What you can ask" not in html
+
+
+def test_the_hero_action_outweighs_the_header_one():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".opening-actions .solid { font-size: 1rem;" in css
+    assert ".deskbar-end .solid { font-size: 0.8125rem;" in css

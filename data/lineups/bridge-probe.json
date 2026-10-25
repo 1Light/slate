@@ -1,0 +1,21 @@
+{
+  "name": "Bridge probe — well-covered films across distinct territories",
+  "note": "Not a real programme. Fourteen films chosen so that MovieLens has thousands of raters for each, and so that the set spans clearly separate territories: Coen crime, American arthouse, cerebral science fiction and mannered comedy. If Slate finds bridges here, their audience claim can be tested against real viewing. The sci-fi season covers well but produces no bridges, and the three festivals produce bridges that MovieLens has never heard of.",
+  "entity_type": "urn:entity:movie",
+  "films": [
+    { "title": "Pulp Fiction", "year": 1994 },
+    { "title": "Fargo", "year": 1996 },
+    { "title": "The Big Lebowski", "year": 1998 },
+    { "title": "No Country for Old Men", "year": 2007 },
+    { "title": "Mulholland Drive", "year": 2001 },
+    { "title": "Lost in Translation", "year": 2003 },
+    { "title": "There Will Be Blood", "year": 2007 },
+    { "title": "Eternal Sunshine of the Spotless Mind", "year": 2004 },
+    { "title": "Her", "year": 2013 },
+    { "title": "Ex Machina", "year": 2014 },
+    { "title": "Children of Men", "year": 2006 },
+    { "title": "Moon", "year": 2009 },
+    { "title": "The Grand Budapest Hotel", "year": 2014 },
+    { "title": "Birdman", "year": 2014 }
+  ]
+}

@@ -298,8 +298,6 @@ def improve(qloo: Qloo, matrix: Matrix, analysis: Analysis,
 
     if swaps:
         first, last = swaps[0], swaps[-1]
-        n = len(swaps)
-        how_many = f"{n} change{'' if n == 1 else 's'}"
         groups_before, groups_after = first.before["clusters"], last.after["clusters"]
         biggest_before = first.before["largest_cluster"]
         biggest_after = last.after["largest_cluster"]
@@ -307,21 +305,22 @@ def improve(qloo: Qloo, matrix: Matrix, analysis: Analysis,
 
         wins = []
         if groups_after > groups_before:
-            wins.append(f"take the lineup from {groups_before} groups "
+            wins.append(f"the lineup goes from {groups_before} groups "
                         f"to {groups_after}")
         if biggest_after < biggest_before:
-            wins.append(f"bring the largest group down from {biggest_before} "
-                        f"slots to {biggest_after}")
+            wins.append(f"the largest group comes down from "
+                        f"{biggest_before} slots to {biggest_after}")
         if bridged > 0:
-            wins.append("open a route between groups that had none"
+            wins.append("a route opens between groups that had none"
                         if bridged == 1
-                        else f"open {bridged} new routes between groups")
+                        else f"{bridged} new routes open between groups")
         if not wins:
-            wins.append("leave the slate the same size but less concentrated")
+            wins.append("the slate stays the same size but is less "
+                        "concentrated")
 
         joined = (wins[0] if len(wins) == 1
                   else ", ".join(wins[:-1]) + f", and {wins[-1]}")
-        verdict = f"{how_many} would {joined}."
+        verdict = f"{joined[0].upper()}{joined[1:]}."
 
     else:
         verdict = (

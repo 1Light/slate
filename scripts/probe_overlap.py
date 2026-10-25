@@ -66,7 +66,7 @@ def main() -> int:
         for f in films:
             want[norm(f.title)] = (slug, f, entity_type)
 
-    ids, titles, made = {}, {}, {}
+    ids, titles, made, genres = {}, {}, {}, {}
     with (ML / "movies.csv").open(encoding="utf-8") as fh:
         for row in csv.DictReader(fh):
             key = norm(row["title"])
@@ -80,6 +80,8 @@ def main() -> int:
             ids[int(row["movieId"])] = key
             titles[key] = row["title"]
             made[key] = year
+            genres[key] = {g for g in row.get("genres", "").split("|")
+                           if g and g != "(no genres listed)"}
 
     print(f"matched {len(titles)} of {len(want)} films across "
           f"{len(LINEUPS)} lineups")
@@ -141,6 +143,37 @@ def main() -> int:
     print(f"\n{len(rows)} pairs with at least {MIN_RATERS} raters each\n")
     ds = [r["d"] for r in rows]
 
+    pops = {}
+    for slug in LINEUPS:
+        _n2, _nt, films2, et2 = _load_lineup(slug)
+        resolved2, _m2 = resolve_all(qloo, films2, et2)
+        m2 = matrix_mod.build(qloo, resolved2, et2)
+        for t in m2.films:
+            pops[norm(t)] = m2.popularity(t)
+
+    gj, yd, pd_, target = [], [], [], []
+    for r in rows:
+        a, b = r["pair"]
+        ga, gb = genres.get(a, set()), genres.get(b, set())
+        union = ga | gb
+        gj.append(len(ga & gb) / len(union) if union else 0.0)
+        yd.append(abs(made.get(a, 0) - made.get(b, 0)))
+        pa, pb = pops.get(a), pops.get(b)
+        pd_.append(abs(pa - pb) if pa is not None and pb is not None else 0.0)
+        target.append(r["phi"])
+
+    baselines = [
+        ("Slate distance", spearman(ds, target)),
+        ("Shared genres", spearman(gj, target)),
+        ("Years apart", spearman(yd, target)),
+        ("Popularity gap", spearman(pd_, target)),
+    ]
+    print("\n  against the same audience overlap:")
+    for nm, v in baselines:
+        print(f"    {nm:<22} {v:+.3f}" if v is not None
+              else f"    {nm:<22}    n/a")
+
+
     print("  Slate distance against, by Spearman:")
     for field, label in (("jaccard", "shared raters (Jaccard)"),
                          ("lift", "more shared than chance (lift)"),
@@ -170,6 +203,31 @@ def main() -> int:
         a, b = r["pair"]
         print(f"    {titles[a][:28]:<28} / {titles[b][:28]:<28} "
               f"jaccard {r['jaccard']:.3f}  lift {r['lift']:5.2f}")
+
+    by_distance = sorted(rows, key=lambda r: (r["d"], r["pair"]))
+    def row(r):
+        a, b = r["pair"]
+        return {"a": titles[a], "b": titles[b], "distance": r["d"],
+                "overlap": round(r["jaccard"], 4),
+                "phi": round(r["phi"], 4), "lift": round(r["lift"], 3),
+                "n": r["fame"]}
+
+    vpath = Path("data/validation.json")
+    if vpath.exists():
+        v = json.loads(vpath.read_text(encoding="utf-8"))
+        m = v.setdefault("movielens", {})
+        m["overlap_rho"] = spearman(ds, [r["phi"] for r in rows])
+        m["overlap_jaccard_rho"] = spearman(ds, [r["jaccard"] for r in rows])
+        m["overlap_popularity_rho"] = spearman(fame, [r["phi"] for r in rows])
+        m["overlap_pairs"] = len(rows)
+        m["closest"] = [row(r) for r in by_distance[:4]]
+        m["furthest"] = [row(r) for r in by_distance[-4:]]
+        m["all_pairs"] = [row(r) for r in by_distance]
+        m["baselines"] = [{"name": nm, "rho": round(v, 4)}
+                          for nm, v in baselines if v is not None]
+        vpath.write_text(json.dumps(v, indent=2, ensure_ascii=False),
+                         encoding="utf-8")
+        print(f"\nwrote the overlap figures into {vpath}")
 
     out = Path("data/overlap.json")
     out.write_text(json.dumps({

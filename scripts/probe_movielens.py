@@ -187,10 +187,11 @@ def main() -> int:
         print("   genre label has almost nothing to separate them with")
 
     rows = [
-        ("Qloo distance", rho, "cultural affinity"),
-        ("Genre overlap", spearman(gj, agree), "Jaccard on MovieLens labels"),
-        ("Year apart", spearman(yd, agree), "release dates"),
-        ("Fame gap", spearman(pd_, agree), "difference in Qloo popularity"),
+        ("Slate distance", rho, "cultural affinity"),
+        ("Shared genres", spearman(gj, agree), "Jaccard on MovieLens labels"),
+        ("Years apart", spearman(yd, agree), "release dates"),
+        ("Popularity gap", spearman(pd_, agree),
+         "difference in Qloo popularity"),
     ]
     width = max(len(n) for n, _, _ in rows)
     print()

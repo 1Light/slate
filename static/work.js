@@ -83,13 +83,20 @@ async function load() {
 }
 
 const SAMPLE = {
-  bar: [4, 3, 2],
+  bar: [3, 2, 2],
   groups: [
-    { letter: 'A', n: 4, films: [['Anatomy of a Fall'], ['The Zone of Interest']], more: 2 },
-    { letter: 'B', n: 3, films: [['Perfect Days'], ['Fallen Leaves', 'bridge B\u00b7C', 'bridge']] },
-    { letter: 'C', n: 2, films: [['Youth'], ['Monster', 'outlier', 'alone']] },
+    { letter: 'A', n: 3,
+      films: [['Anatomy of a Fall'], ['The Zone of Interest'], ['Club Zero']] },
+    { letter: 'B', n: 2, films: [['Perfect Days'], ['Past Lives']] },
+    { letter: 'C', n: 2,
+      films: [['Youth'], ['Monster', 'outlier', 'alone']] },
   ],
+  bridges: [['Fallen Leaves', '2023', 'B\u00b7C']],
 };
+
+const SAMPLE_TITLES = ['Monster', 'Anatomy of a Fall', 'Past Lives',
+  'Fallen Leaves', 'Club Zero', 'Youth', 'The Zone of Interest',
+  'Perfect Days'];
 
 function sampleFigure() {
   const fig = el('div', 'taste');
@@ -122,6 +129,19 @@ function sampleFigure() {
     cols.appendChild(col);
   });
   fig.appendChild(cols);
+
+  const band = el('div', 'taste-links');
+  band.appendChild(el('p', 'taste-links-head', 'Bridges'));
+  SAMPLE.bridges.forEach(([title, year, spans]) => {
+    const one = el('div', 'taste-link');
+    const name = el('p', 'taste-film');
+    name.appendChild(document.createTextNode(title));
+    name.appendChild(el('span', 'taste-year', year));
+    one.appendChild(name);
+    one.appendChild(el('span', 'taste-tag bridge', spans));
+    band.appendChild(one);
+  });
+  fig.appendChild(band);
   return fig;
 }
 
@@ -131,22 +151,21 @@ function draw() {
   stage.textContent = '';
 
   const top = el('div', 'door');
-
-  const left = el('div', 'door-ask');
-  left.appendChild(el('h1', 'door-title', 'Start with a lineup.'));
-  left.appendChild(el('p', 'door-lede',
+  top.appendChild(el('h1', 'door-title', 'Start with a lineup.'));
+  top.appendChild(el('p', 'door-lede',
     'Four to twenty-four titles, one per line. Films, music, books, '
     + 'podcasts or TV shows.'));
 
+  const pair = el('div', 'door-pair');
+
+  const left = el('div', 'door-ask');
   const area = el('textarea');
-  area.rows = 7;
   area.spellcheck = false;
-  area.placeholder = 'Anatomy of a Fall\nPerfect Days\nThe Zone of Interest\n'
-    + 'Fallen Leaves\nYouth (2023)';
+  area.placeholder = SAMPLE_TITLES.join('\n');
   left.appendChild(area);
 
   const row = el('div', 'row');
-  const make = el('button', 'solid', 'Make a workspace');
+  const make = el('button', 'solid', 'Analyse this lineup');
   make.type = 'button';
   const sample = el('button', 'linky', 'Use an example');
   sample.type = 'button';
@@ -162,7 +181,8 @@ function draw() {
   right.appendChild(sampleFigure());
   right.appendChild(el('p', 'door-caption', 'What Slate gives back'));
 
-  top.append(left, right);
+  pair.append(left, right);
+  top.appendChild(pair);
   stage.appendChild(top);
 
   make.onclick = async () => {
@@ -187,7 +207,7 @@ function draw() {
       said.textContent = e.message || 'That did not work.';
     } finally {
       make.disabled = false;
-      make.textContent = 'Make a workspace';
+      make.textContent = 'Analyse this lineup';
     }
   };
 
@@ -206,14 +226,17 @@ function draw() {
     }
   };
 
-  if (!spaces.length) return;
-
   const band = el('div', 'door-band');
   const inner = el('div', 'door-band-in');
   inner.appendChild(el('p', 'door-head', 'Earlier workspaces'));
-  const cards = el('div', 'door-cards');
-  spaces.forEach((w) => cards.appendChild(spaceRow(w)));
-  inner.appendChild(cards);
+  if (spaces.length) {
+    const cards = el('div', 'door-cards');
+    spaces.forEach((w) => cards.appendChild(spaceRow(w)));
+    inner.appendChild(cards);
+  } else {
+    inner.appendChild(el('p', 'door-none',
+      'Nothing yet. Analyse a lineup and it will be kept here.'));
+  }
   band.appendChild(inner);
   stage.appendChild(band);
 }
@@ -317,6 +340,25 @@ let asked = 0;
 
 const lineup = () => (space ? space.titles.slice() : []);
 
+function fold(shown, total, draw) {
+  let open = false;
+  const btn = el('button', 'fold');
+  btn.type = 'button';
+  const paint = () => {
+    btn.textContent = open ? 'Show fewer' : `+${total - shown} more`;
+    draw(open ? total : shown);
+  };
+  btn.onclick = () => { open = !open; paint(); };
+  paint();
+  return total > shown ? btn : null;
+}
+
+function said(text) {
+  if (said.show) said.show(text);
+}
+
+const inGroup = (g) => (Array.isArray(g) ? g : (g && g.films) || []);
+
 async function openSpace(id) {
   try {
     space = await ask(`/api/spaces/${id}?owner=${owner()}`);
@@ -352,10 +394,13 @@ let openAsk = null;
 let chipsOpen = false;
 
 const ASKS = [
-  ['fewer', 'Fit it into fewer slots'],
-  ['swap', 'Find a title that adds a new group'],
-  ['stand', 'Check a new title against the lineup'],
-  ['compare', 'Compare titles before adding'],
+  ['fewer', 'Fit it into fewer slots', 'Keep the strongest smaller set'],
+  ['swap', 'Find a title that adds a new group',
+    'Reach an audience the lineup misses'],
+  ['stand', 'Check a new title against the lineup',
+    'See what changes if it is added'],
+  ['compare', 'Compare titles before adding',
+    'Choose between candidates'],
 ];
 
 function drawSpace() {
@@ -392,29 +437,25 @@ function drawSpace() {
   resetBtn.type = 'button';
   resetBtn.hidden = true;
   resetBtn.onclick = async () => {
-    await save({ titles: started.slice() });
+    const last = (space.versions || [])[0];
+    const to = last ? last.titles : started;
+    await save({ titles: to.slice() });
     drawChips();
     drawSpace.drawKeep();
     runSpace();
-    status.textContent = 'Back to the lineup you started with.';
+    status.textContent = last
+      ? `Back to your version from ${new Date(last.at * 1000)
+        .toLocaleString('en-GB',
+          { day: 'numeric', month: 'short', hour: '2-digit',
+            minute: '2-digit' })}.`
+      : 'Back to the lineup you started with.';
   };
 
   const printBtn = el('button', 'ghost', 'Preview');
   printBtn.type = 'button';
   printBtn.onclick = () => {
     if (!shown) { status.textContent = 'Nothing to show yet.'; return; }
-    openAsk = 'paper';
-    markAsk();
-    work.textContent = '';
-    const head = el('div', 'work-head');
-    head.appendChild(el('h2', 'work-title', 'Preview'));
-    const shut = el('button', 'linky', 'Close');
-    shut.type = 'button';
-    shut.onclick = closeAsk;
-    head.appendChild(shut);
-    const body = el('div', 'work-body');
-    work.append(head, body, status);
-    showPaper(body, 'lineup', shown);
+    showPaper('lineup', shown);
   };
 
   const saveBtn = el('button', 'solid', 'Save version');
@@ -429,15 +470,18 @@ function drawSpace() {
           owner: owner(),
           titles: lineup(),
           groups: shown ? shown.clusters.length : null,
-          sizes: shown ? shown.clusters.map((c) => c.length) : [],
+          sizes: shown
+            ? shown.clusters.map((c) => inGroup(c).length) : [],
         }),
       });
       const had = space.versions.length;
       space = got;
       drawVersions();
-      status.textContent = space.versions.length > had
-        ? 'Saved'
-        : 'Nothing has changed since your last version.';
+      if (space.versions.length > had) {
+        said('Saved');
+      } else {
+        status.textContent = 'Nothing has changed since your last version.';
+      }
     } catch (e) {
       status.textContent = e.message || 'That version could not be saved.';
     } finally {
@@ -445,6 +489,16 @@ function drawSpace() {
     }
   };
   end.append(resetBtn, printBtn, saveBtn);
+
+  const note = el('p', 'deskbar-said');
+  note.setAttribute('role', 'status');
+  end.appendChild(note);
+  said.show = (text) => {
+    note.textContent = text;
+    note.classList.add('on');
+    clearTimeout(said.timer);
+    said.timer = setTimeout(() => note.classList.remove('on'), 3000);
+  };
 
   const desk = el('div', 'desk');
   rail = el('aside', 'desk-rail');
@@ -494,10 +548,12 @@ function drawSpace() {
   rail.appendChild(slotField);
 
   rail.appendChild(el('p', 'desk-rail-head desk-rail-gap', 'Ask Slate'));
-  ASKS.forEach(([key, label]) => {
-    const btn = el('button', 'ask', label);
+  ASKS.forEach(([key, label, why]) => {
+    const btn = el('button', 'ask');
     btn.type = 'button';
     btn.dataset.ask = key;
+    btn.appendChild(el('span', 'ask-what', label));
+    btn.appendChild(el('span', 'ask-why', why));
     btn.onclick = () => (openAsk === key ? closeAsk() : showAsk(key));
     rail.appendChild(btn);
   });
@@ -560,6 +616,7 @@ function showAsk(key) {
 
   const out = body.querySelector('.out');
   if (out && !out.children.length && shown) {
+    out.appendChild(el('p', 'out-when', 'The lineup as it stands'));
     out.appendChild(drawn(shown));
     out.classList.add('standing');
   }
@@ -594,11 +651,11 @@ function drawChips() {
     };
     chipBox.appendChild(chip);
   });
-  if (!chipsOpen && all.length > CHIPS_SHOWN) {
-    const more = el('button', 'chips-more',
-      `${all.length - CHIPS_SHOWN} more`);
+  if (all.length > CHIPS_SHOWN) {
+    const more = el('button', 'fold', chipsOpen
+      ? 'Show fewer' : `+${all.length - CHIPS_SHOWN} more`);
     more.type = 'button';
-    more.onclick = () => { chipsOpen = true; drawChips(); };
+    more.onclick = () => { chipsOpen = !chipsOpen; drawChips(); };
     chipBox.appendChild(more);
   }
 }
@@ -608,8 +665,9 @@ function drawCounts() {
   const noun = nounFor(space.entity_type, n);
   const groups = shown ? `${shown.clusters.length} groups` : '';
   const over = n - space.slots;
-  const gap = over > 0 ? `${over} slots over`
-    : over < 0 ? `${-over} slots free` : '';
+  const slot = (n) => `${n} slot${n === 1 ? '' : 's'}`;
+  const gap = over > 0 ? `${slot(over)} over`
+    : over < 0 ? `${slot(-over)} free` : '';
   const counts = document.querySelector('.deskbar-counts');
   if (!counts) return;
   counts.textContent = [`${n} ${noun}`, groups, gap].filter(Boolean)
@@ -732,7 +790,7 @@ function drawFeet() {
     showingEarlier = !showingEarlier;
     figure.textContent = '';
     if (showingEarlier) {
-      figure.appendChild(el('p', 'figure-when', 'Before your last change'));
+      figure.appendChild(el('p', 'figure-when', 'The lineup before your last change'));
     }
     figure.appendChild(drawn(showingEarlier ? earlier : shown));
     drawFeet();
@@ -813,6 +871,9 @@ function fewerAsk(body) {
         withTitles(p2, `Slate dropped ${nameList(gone)}.`,
           lineup().concat(gone));
         side.appendChild(p2);
+        side.appendChild(el('p', 'aside-note',
+          'Each dropped title sat closest to one that stayed, so the ground '
+          + 'it covered is still covered.'));
       }
       split.append(left, side);
       out.appendChild(split);
@@ -828,12 +889,13 @@ function fewerAsk(body) {
 
 function swapAsk(body) {
   body.appendChild(el('p', 'work-lede',
-    'Slate takes a slot the lineup can spare, asks Qloo for titles unlike '
-    + 'what you have, and tests each one by rebuilding the whole lineup. It '
-    + 'keeps a change only if the result improves.'));
+    'Every candidate is added to the full lineup and the groups are worked '
+    + 'out again from scratch, so nothing is judged on its own. A swap is '
+    + 'proposed only if the result is measurably better. If nothing clears '
+    + 'that bar, Slate reports no change.'));
 
   const row = el('div', 'work-form');
-  const go = el('button', 'solid', 'Look for one');
+  const go = el('button', 'solid', 'Look for a swap');
   go.type = 'button';
   row.appendChild(go);
   body.appendChild(row);
@@ -855,24 +917,26 @@ function swapAsk(body) {
       failure(e, out, () => go.onclick());
     } finally {
       go.disabled = false;
-      go.textContent = 'Look for one';
+      go.textContent = 'Look for a swap';
     }
   };
 }
 
 function paintSwap(out, d) {
   const a = d.agent || {};
-  const swap = (a.swaps || [])[0];
+  const swaps = a.swaps || [];
+  const swap = swaps[0];
+  const many = swaps.length > 1;
   const names = lineup().concat((a.rejected || []).map((r) => r.film),
-    swap ? [swap.in, swap.out] : []);
+    swaps.flatMap((x) => [x.in, x.out]));
 
-  if (swap) {
+  swaps.forEach((x) => {
     const head = el('p', 'work-swap');
-    head.appendChild(el('span', 'work-swap-out', swap.out));
+    head.appendChild(el('span', 'work-swap-out', x.out));
     head.appendChild(el('span', 'work-swap-arrow', '\u2192'));
-    head.appendChild(el('span', 'work-swap-in', swap.in));
+    head.appendChild(el('span', 'work-swap-in', x.in));
     out.appendChild(head);
-  }
+  });
 
   out.appendChild(drawn(d));
 
@@ -880,8 +944,10 @@ function paintSwap(out, d) {
   const left = el('div');
 
   if (swap) {
-    block(left, 'What the swap does', a.verdict || '');
-    const take = el('button', 'solid', 'Make this swap');
+    block(left, many ? 'What the swaps do' : 'What the swap does',
+      a.verdict || '');
+    const take = el('button', 'solid',
+      many ? 'Make these swaps' : 'Make this swap');
     take.type = 'button';
     take.onclick = async () => {
       await save({ titles: d.films.map((f) => f.title) });
@@ -908,12 +974,22 @@ function paintSwap(out, d) {
     const side = el('div', 'aside-card');
     side.appendChild(el('p', 'aside-head',
       swap ? 'Also tested' : 'Tested and turned down'));
-    a.rejected.slice(0, 5).forEach((r) => {
-      const p2 = el('p', 'aside-line');
-      p2.appendChild(el('span', 'aside-name', r.film));
-      withTitles(p2, ` \u2014 ${r.why}`, names);
-      side.appendChild(p2);
-    });
+    const rows = el('div');
+    side.appendChild(rows);
+    const draw = (n) => {
+      rows.textContent = '';
+      a.rejected.slice(0, n).forEach((r) => {
+        const one = el('div', 'turned');
+        one.appendChild(el('p', 'turned-name', r.film));
+        const why = el('p', 'turned-why');
+        withTitles(why, `${r.why.charAt(0).toUpperCase()}${r.why.slice(1)}.`,
+          names);
+        one.appendChild(why);
+        rows.appendChild(one);
+      });
+    };
+    const more = fold(2, a.rejected.length, draw);
+    if (more) side.appendChild(more);
     side.appendChild(el('p', 'aside-note',
       'Each candidate was added and the groups worked out again from '
       + 'scratch. A change is kept only if the result improves.'));
@@ -945,7 +1021,7 @@ function drawVersions() {
   if (kept.length > 1) {
     const all = el('button', 'linky', 'All versions');
     all.type = 'button';
-    all.onclick = () => allVersions(kept);
+    all.onclick = () => allVersions();
     versionBox.appendChild(all);
   }
   versionBox.appendChild(el('p', 'fine', 'Keeps your last twenty.'));
@@ -985,7 +1061,7 @@ async function previewVersion(v) {
     });
     body.textContent = '';
     body.appendChild(drawn(d));
-    const acts = el('div', 'row');
+    const acts = el('div', 'row aligned');
     const apply = el('button', 'solid', 'Use this version');
     apply.type = 'button';
     apply.onclick = async () => {
@@ -1004,7 +1080,7 @@ async function previewVersion(v) {
   }
 }
 
-function allVersions(kept) {
+function allVersions() {
   openAsk = 'versions';
   markAsk();
   work.textContent = '';
@@ -1020,21 +1096,44 @@ function allVersions(kept) {
   const body = el('div', 'work-body');
   work.append(body, status);
 
+  const kept = space.versions || [];
+  if (!kept.length) {
+    body.appendChild(el('p', 'work-lede',
+      'Nothing saved yet. Save a version and it will be listed here.'));
+    return;
+  }
+
+  body.appendChild(el('p', 'work-lede',
+    'Each one is a lineup you saved. Opening a version shows its shape '
+    + 'before you decide to use it. Slate keeps your last twenty.'));
+
   const when = (at) => new Date(at * 1000).toLocaleString('en-GB',
     { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
   kept.forEach((v) => {
     const row = el('div', 'version-row');
     row.appendChild(el('span', 'version-when', when(v.at)));
-    row.appendChild(el('span', 'version-what',
+
+    const shape = el('span', 'version-shape');
+    const bar = el('span', 'version-bar');
+    (v.sizes && v.sizes.length ? v.sizes : [1]).forEach((n, i) => {
+      const seg = el('span');
+      seg.style.flex = String(Math.max(1, n));
+      if (i === 0) seg.classList.add('lead');
+      bar.appendChild(seg);
+    });
+    shape.appendChild(bar);
+    shape.appendChild(el('span', 'version-what',
       `${v.titles.length} ${nounFor(space.entity_type, v.titles.length)}`
       + (v.groups ? ` \u00b7 ${v.groups} groups` : '')));
+    row.appendChild(shape);
+
     const open = el('button', 'ghost', 'Open');
     open.type = 'button';
     open.onclick = () => previewVersion(v);
     row.appendChild(open);
     body.appendChild(row);
   });
-  body.appendChild(el('p', 'aside-note', 'Keeps your last twenty.'));
 }
 
 function block(node, head, fill) {
@@ -1054,7 +1153,7 @@ function standAsk(body) {
   const row = el('div', 'work-form');
   const field = el('input');
   field.type = 'text';
-  field.placeholder = `A ${nounFor(space.entity_type, 1)} you are weighing up`;
+  field.placeholder = 'Name the title';
   const go = el('button', 'solid', 'Analyse');
   go.type = 'button';
   const egg = el('button', 'linky', 'Use an example');
@@ -1109,7 +1208,6 @@ function standAsk(body) {
 
 function paintStand(out, b) {
   out.textContent = '';
-  const sheetSpot = el('div', 'paper-spot');
   const name = b.candidate.film;
   out.appendChild(drawn(b.shape));
 
@@ -1162,19 +1260,21 @@ function paintStand(out, b) {
   };
   const show = el('button', 'ghost', 'See the brief');
   show.type = 'button';
-  show.onclick = () => showPaper(sheetSpot, 'stand', b);
+  show.onclick = () => showPaper('stand', b);
   acts.append(take, show);
   left.appendChild(acts);
 
   split.append(left, distanceCard(b.candidate.distances));
-  out.append(split, sheetSpot);
+  out.appendChild(split);
 }
 
 function distanceCard(rows) {
   const side = el('div', 'aside-card');
   side.appendChild(el('p', 'aside-head', 'How far it sits from each'));
   const table = el('table', 'aside-table');
-  const show = (n) => {
+  side.appendChild(table);
+
+  const draw = (n) => {
     table.textContent = '';
     rows.slice(0, n).forEach((x) => {
       const tr = el('tr');
@@ -1183,19 +1283,10 @@ function distanceCard(rows) {
       tr.append(td, el('td', 'd', x.distance.toFixed(1)));
       table.appendChild(tr);
     });
-    if (n < rows.length) {
-      const tr = el('tr');
-      const more = el('button', 'linky', `+${rows.length - n} more`);
-      more.type = 'button';
-      more.onclick = () => show(rows.length);
-      const td = el('td');
-      td.appendChild(more);
-      tr.append(td, el('td'));
-      table.appendChild(tr);
-    }
   };
-  show(4);
-  side.appendChild(table);
+  const more = fold(4, rows.length, draw);
+  if (more) side.appendChild(more);
+
   side.appendChild(el('p', 'aside-note',
     'Distance measures shared taste. It does not say why two titles are '
     + 'close.'));
@@ -1203,25 +1294,23 @@ function distanceCard(rows) {
 }
 
 function compareAsk(body) {
-  const form = el('div', 'work-form compare-form');
-
-  const col = el('div');
-  col.appendChild(el('p', 'fine',
+  body.appendChild(el('p', 'fine',
     'The titles you are choosing between, one per line'));
   const area = el('textarea');
-  area.rows = 4;
+  area.className = 'compare-box';
+  area.rows = 5;
   area.spellcheck = false;
-  col.appendChild(area);
-  form.appendChild(col);
+  area.placeholder = 'Detectorists\nThe Rehearsal\nReservation Dogs\n'
+    + 'Starstruck\nSomebody Somewhere';
+  body.appendChild(area);
 
-  const slotCol = el('div');
-  slotCol.appendChild(el('p', 'fine', 'Room for'));
+  const form = el('div', 'work-form');
+  form.appendChild(el('span', 'fine', 'Room for'));
   const slots = el('select');
   slots.className = 'narrow';
   [1, 2, 3].forEach((n) => slots.appendChild(el('option', null, String(n))));
   slots.value = '2';
-  slotCol.appendChild(slots);
-  form.appendChild(slotCol);
+  form.appendChild(slots);
 
   const go = el('button', 'solid', 'Analyse');
   go.type = 'button';
@@ -1274,11 +1363,10 @@ function compareAsk(body) {
 
 function paintChoose(out, got) {
   out.textContent = '';
-  const sheetSpot = el('div', 'paper-spot');
   const best = got.best;
   out.appendChild(drawn(got.shape));
 
-  const split = el('div', 'work-split');
+  const split = el('div', 'work-split ranked');
   const left = el('div');
 
   const wrap = el('div', 'said');
@@ -1289,7 +1377,7 @@ function paintChoose(out, got) {
 
   const said = {};
   best.films.forEach((t) => {
-    const fresh = (best.clusters[best.joins[t]] || []).length === 1;
+    const fresh = inGroup(best.clusters[best.joins[t]]).length === 1;
     const key = best.roles[t] === 'bridge' ? 'bridge' : fresh ? 'new' : 'joins';
     (said[key] = said[key] || []).push(t);
   });
@@ -1343,38 +1431,41 @@ function paintChoose(out, got) {
   };
   const show = el('button', 'ghost', 'See the brief');
   show.type = 'button';
-  show.onclick = () => showPaper(sheetSpot, 'choose', got);
+  show.onclick = () => showPaper('choose', got);
   acts.append(take, show);
   left.appendChild(acts);
 
   const side = el('div', 'aside-card');
   side.appendChild(el('p', 'aside-head', 'Every set, best first'));
-  const table = el('table', 'aside-table');
-  const head = el('tr', 'head');
-  ['Set', 'Groups', 'Closest'].forEach((t) => {
-    head.appendChild(el('td', null, t));
-  });
-  table.appendChild(head);
-  got.every.slice(0, 5).forEach((r, i) => {
-    const tr = el('tr', i ? null : 'win');
-    const td = el('td');
-    withTitles(td, r.films.join(' + '), namePool());
-    tr.append(td, el('td', 'd', String(r.groups)),
-      el('td', 'd', r.closest.toFixed(1)));
-    table.appendChild(tr);
-  });
-  if (got.every.length > 5) {
-    const tr = el('tr');
-    tr.appendChild(el('td', 'fine', `+${got.every.length - 5} more`));
-    table.appendChild(tr);
-  }
+  const table = el('table', 'aside-table wide');
   side.appendChild(table);
+
+  const draw = (n) => {
+    table.textContent = '';
+    const head = el('tr', 'head');
+    ['Set', 'Groups', 'Closest', 'Next'].forEach((t) => {
+      head.appendChild(el('td', null, t));
+    });
+    table.appendChild(head);
+    got.every.slice(0, n).forEach((r, i) => {
+      const tr = el('tr', i ? null : 'win');
+      const td = el('td');
+      withTitles(td, r.films.join(' + '), namePool());
+      tr.append(td, el('td', 'd', String(r.groups)),
+        el('td', 'd', r.closest.toFixed(1)),
+        el('td', 'd', r.next == null ? '\u2014' : r.next.toFixed(1)));
+      table.appendChild(tr);
+    });
+  };
+  const more = fold(3, got.every.length, draw);
+  if (more) side.appendChild(more);
+
   side.appendChild(el('p', 'aside-note',
-    'Each set was added and the groups worked out again. Ranked by how far '
-    + 'apart their two most alike titles end up.'));
+    'Each set was added and the groups worked out again. Ranked by the '
+    + 'closest pair, then by the next closest where that ties.'));
 
   split.append(left, side);
-  out.append(split, sheetSpot);
+  out.appendChild(split);
 }
 
 function line(text) {
@@ -1399,23 +1490,44 @@ async function paperFor(kind, data) {
   return { markup: await res.text(), body };
 }
 
-function showPaper(node, kind, data) {
-  node.textContent = '';
-  const wrap = el('div', 'paper');
+function showPaper(kind, data) {
+  document.querySelectorAll('.paper-over').forEach((n) => n.remove());
+
+  const over = el('div', 'paper-over');
+  over.setAttribute('role', 'dialog');
+  over.setAttribute('aria-modal', 'true');
+  over.setAttribute('aria-label', 'The brief');
+
+  const box = el('div', 'paper');
   const head = el('div', 'paper-head');
   head.appendChild(el('p', 'aside-head', 'The brief'));
   const acts = el('div', 'paper-acts');
   head.appendChild(acts);
-  wrap.appendChild(head);
+  box.appendChild(head);
 
   const frame = document.createElement('iframe');
   frame.className = 'paper-frame';
   frame.title = 'The brief as it will print';
-  wrap.appendChild(frame);
-  node.appendChild(wrap);
+  box.appendChild(frame);
 
   const said = el('p', 'aside-note');
-  wrap.appendChild(said);
+  box.appendChild(said);
+  over.appendChild(box);
+  document.body.appendChild(over);
+  document.body.classList.add('held');
+
+  const shut = () => {
+    over.remove();
+    document.body.classList.remove('held');
+    document.removeEventListener('keydown', esc);
+  };
+  function esc(ev) { if (ev.key === 'Escape') shut(); }
+  document.addEventListener('keydown', esc);
+  over.onclick = (ev) => { if (ev.target === over) shut(); };
+
+  const close = el('button', 'ghost', 'Close');
+  close.type = 'button';
+  close.onclick = shut;
 
   paperFor(kind, data).then(({ markup, body }) => {
     frame.srcdoc = markup;
@@ -1456,9 +1568,10 @@ function showPaper(node, kind, data) {
         get.disabled = false;
       }
     };
-    acts.appendChild(get);
+    acts.append(get, close);
   }).catch((e) => {
     said.textContent = e.message || 'That document could not be made.';
+    acts.appendChild(close);
   });
 }
 

@@ -598,7 +598,10 @@ def _choose_best(m, lineup, candidates, slots):
                  | {"closest": round(tried[1]["profile"][0], 6)}
                  if len(tried) > 1 else None),
         "every": [{"films": r["films"], "groups": r["groups"],
-                   "closest": round(r["profile"][0], 6)} for r in tried],
+                   "closest": round(r["profile"][0], 6),
+                   "next": (round(r["profile"][1], 6)
+                            if len(r["profile"]) > 1 else None)}
+                  for r in tried],
         "slots": slots,
         "from": len(candidates),
     }
