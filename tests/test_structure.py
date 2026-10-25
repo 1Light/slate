@@ -1984,3 +1984,20 @@ def test_the_group_header_is_legible_on_the_panel():
         assert sel in css, sel
     at = css.index(".stage span em {")
     assert "var(--panel-muted)" in css[at:css.index("}", at)], "the animations too"
+
+
+def test_served_json_does_not_republish_qloo_values():
+    import json
+    served = json.loads((Path(__file__).resolve().parent.parent / "data"
+                         / "served.json").read_text())
+    for slug, shape in served.items():
+        if not isinstance(shape, dict):
+            continue
+        for key in ("films", "bridges", "isolated"):
+            for row in (shape.get(key) or []):
+                if isinstance(row, dict):
+                    assert "popularity" not in row, f"{slug}.{key}"
+        assert "popularity_confound" in shape
+    src = (Path(__file__).resolve().parent.parent / "scripts"
+           / "precompute.py").read_text()
+    assert "def _without_qloo_values(shape: dict)" in src

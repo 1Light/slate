@@ -702,7 +702,11 @@
     "between_mean": 0.24277,
     "gap": 0.10705,
     "p": 0.0001,
+    "reached": 0,
     "shuffles": 10000,
+    "permuted": "titles within each lineup, group sizes preserved",
+    "jaccard_gap": 0.08447,
+    "jaccard_p": 0.0001,
     "lineups": [
       {
         "name": "One genre",

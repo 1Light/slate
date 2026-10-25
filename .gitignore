@@ -1,15 +1,10 @@
 data/cache/
-search_*.json
-v2_insights_*.json
-entities_*.json
 *.cache.json
 
 .env
 .env.*
 !.env.example
 
-*.md
-!README.md
 !.github/**/*.md
 
 data/ml-32m/
@@ -27,7 +22,3 @@ env/
 .vscode/
 .idea/
 *.log
-
-slate_setup.sh
-apply.sh
-data/slate.db

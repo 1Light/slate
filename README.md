@@ -134,6 +134,7 @@ python3 scripts/probe_overlap.py      # does distance predict shared audience
 python3 scripts/probe_movielens.py    # and does agreement follow
 python3 scripts/probe_stability.py    # do groups survive a title leaving
 python3 scripts/probe_bridge.py       # is a bridge just a popular film
+python3 scripts/probe_censoring.py    # are short results from Qloo deterministic
 ```
 
 These write into `data/validation.json`, which the site reads.

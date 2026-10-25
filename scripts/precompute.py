@@ -13,6 +13,16 @@ from app.build import (LINEUPS, _bridge_check, _compare_row,   # noqa: E402
 DATA = Path(__file__).resolve().parent.parent / "data"
 
 
+def _without_qloo_values(shape: dict) -> dict:
+    out = dict(shape)
+    for key in ("films", "bridges", "isolated"):
+        rows = out.get(key)
+        if isinstance(rows, list):
+            out[key] = [{k: v for k, v in r.items() if k != "popularity"}
+                        if isinstance(r, dict) else r for r in rows]
+    return out
+
+
 def main() -> int:
     rows, served = [], {}
 
@@ -24,7 +34,7 @@ def main() -> int:
         except Exception as exc:
             print(f"  {slug}: skipped ({type(exc).__name__})")
             continue
-        served[slug] = shape
+        served[slug] = _without_qloo_values(shape)
         if slug.startswith("_"):
             print(f"  {slug}: {len(shape['clusters'])} groups  (probe)")
             continue
