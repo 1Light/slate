@@ -141,7 +141,7 @@ function cardStage(host, plan) {
 
       const tag = el('span');
       tag.appendChild(el('u', null, 'ABCDEF'[g]));
-      if (plan.notes) tag.appendChild(el('em', null, `${count} films`));
+      if (plan.notes) tag.appendChild(el('em', null, `${count} titles`));
       tag.style.left = `${laneAt(g) - 6}px`;
       tag.style.top = `${top - label}px`;
       host.appendChild(tag);
@@ -452,7 +452,8 @@ function board(d, ui) {
   const head = el('div', 'column-head');
   head.appendChild(el('span', 'column-size', String(d.films.length)));
   head.appendChild(document.createTextNode(' '));
-  head.appendChild(el('span', 'column-what', 'films · as the festival lists them'));
+  head.appendChild(el('span', 'column-what',
+    `${d.nouns || 'titles'} \u00b7 as you gave them`));
   first.appendChild(head);
   [...d.films].sort((a, b) => a.title.localeCompare(b.title)).forEach((f) => {
     const n = filmNode(f, fresh);
