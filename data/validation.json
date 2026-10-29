@@ -94,19 +94,19 @@
     "baselines": [
       {
         "name": "Slate distance",
-        "rho": -0.65
+        "rho": -0.498
       },
       {
         "name": "Shared genres",
-        "rho": 0.0098
+        "rho": 0.038
       },
       {
         "name": "Years apart",
-        "rho": -0.5944
+        "rho": -0.139
       },
       {
         "name": "Popularity gap",
-        "rho": -0.2732
+        "rho": 0.06
       }
     ],
     "baseline_verdict": "Every film in this set carries the Sci-Fi tag, and the tag predicts nothing: +0.038 against Qloo's -0.498. Release year carries a little signal at -0.139. Popularity none. Cultural affinity is thirteen times the strongest predictor of whether two films' viewers agree.",
