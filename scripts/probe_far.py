@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import statistics as stats
@@ -7,10 +7,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import matrix as matrix_mod            # noqa: E402
-from app.build import _load_lineup, _films_from_lines   # noqa: E402
-from app.qloo import Qloo, id_of                # noqa: E402
-from app.resolve import resolve_all             # noqa: E402
+from app import matrix as matrix_mod                        
+from app.build import _load_lineup, _films_from_lines               
+from app.qloo import Qloo, id_of                            
+from app.resolve import resolve_all                         
 
 
 def main() -> int:

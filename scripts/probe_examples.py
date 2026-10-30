@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import json
@@ -7,11 +7,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import matrix as matrix_mod   # noqa: E402
-from app.resolve import Film            # noqa: E402
-from app.qloo import Qloo              # noqa: E402
-from app.resolve import resolve_all     # noqa: E402
-from app.structure import analyse      # noqa: E402
+from app import matrix as matrix_mod               
+from app.resolve import Film                        
+from app.qloo import Qloo                          
+from app.resolve import resolve_all                 
+from app.structure import analyse                  
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "data" / "examples"
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import csv
@@ -11,11 +11,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import matrix as matrix_mod            # noqa: E402
-from app.build import _load_lineup              # noqa: E402
-from app.qloo import Qloo                       # noqa: E402
-from app.resolve import resolve_all             # noqa: E402
-from app.structure import analyse               # noqa: E402
+from app import matrix as matrix_mod                        
+from app.build import _load_lineup                          
+from app.qloo import Qloo                                   
+from app.resolve import resolve_all                         
+from app.structure import analyse                           
 
 ML = Path("data/ml-32m")
 LINEUPS = ["_probe-bridge", "one-genre", "berlinale2024", "cannes2023",

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import csv
@@ -6,15 +6,16 @@ import json
 import math
 import re
 import sys
+import unicodedata
 from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import matrix as matrix_mod            # noqa: E402
-from app.build import _load_lineup              # noqa: E402
-from app.qloo import Qloo                       # noqa: E402
-from app.resolve import resolve_all             # noqa: E402
+from app import matrix as matrix_mod                        
+from app.build import _load_lineup                          
+from app.qloo import Qloo                                   
+from app.resolve import resolve_all                         
 
 ML = Path("data/ml-32m")
 LINEUPS = ["one-genre", "berlinale2024", "cannes2023", "sundance2024"]
@@ -22,10 +23,79 @@ MIN_RATERS = 30
 
 
 def norm(title: str) -> str:
-    t = re.sub(r"\s*\(\d{4}\)\s*$", "", title).strip().lower()
-    t = re.sub(r"^(the|a|an)\s+", "", t)
-    t = re.sub(r",\s*(the|a|an)$", "", t)
-    return re.sub(r"[^a-z0-9]+", "", t)
+                                                                      
+    t = re.sub(r"\s*\(\d{4}\)\s*$", "", title).strip().casefold()
+                                                                 
+    article = re.fullmatch(r"(.+),\s*(the|a|an|la|le|les|el|il|der|die|das)", t)
+    if article:
+        t = f"{article.group(2)} {article.group(1)}"
+    t = unicodedata.normalize("NFKD", t)
+    t = "".join(c for c in t if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", " ", t).strip()
+
+
+def film_key(film):
+                                                                   
+    return norm(film.title), int(film.year or 0)
+
+
+def match_movies(want, movie_rows):
+                                                                           
+
+                                                                              
+                                                                                
+       
+    catalog = defaultdict(dict)
+    for row in movie_rows:
+        catalog[norm(row["title"])][int(row["movieId"])] = row
+
+    ids, titles, made, genres, audit = {}, {}, {}, {}, []
+    for key, entry in sorted(want.items()):
+        title_key, asked = key
+        candidates = []
+        for mid, row in sorted(catalog.get(title_key, {}).items()):
+            ym = re.search(r"\((\d{4})\)\s*$", row["title"])
+            year = int(ym.group(1)) if ym else 0
+            if asked and year == asked:
+                candidates.append((mid, row, year))
+        status = ("matched" if len(candidates) == 1 else
+                  "ambiguous" if candidates else "unmatched")
+        record = {
+            "requested_title": entry["film"].title,
+            "requested_year": asked,
+            "lineups": sorted(entry["lineups"]),
+            "status": status,
+            "candidates": [{"movie_id": mid, "title": row["title"], "year": year}
+                           for mid, row, year in candidates],
+            "accepted_movie_ids": [],
+        }
+        if status == "matched":
+            mid, row, year = candidates[0]
+            if mid in ids and ids[mid] != key:
+                raise ValueError(f"MovieLens ID {mid} matched two requested films")
+            ids[mid] = key
+            titles[key] = row["title"]
+            made[key] = year
+            genres[key] = {g for g in row.get("genres", "").split("|")
+                           if g and g != "(no genres listed)"}
+            record["accepted_movie_ids"] = [mid]
+        audit.append(record)
+    return ids, titles, made, genres, audit
+
+
+def pair_metrics(ua, ub, total):
+    na, nb = len(ua), len(ub)
+    both = len(ua & ub)
+    union = na + nb - both
+    expect = na * nb / total if total else 0.0
+    under = math.sqrt(na * nb * (total - na) * (total - nb))
+    return {
+        "n_a": na, "n_b": nb, "both": both,
+        "jaccard": both / union if union else 0.0,
+        "lift": both / expect if expect else 0.0,
+        "phi": (total * both - na * nb) / under if under else 0.0,
+        "fame": min(na, nb), "gap": abs(na - nb),
+    }
 
 
 def ranks(v):
@@ -56,32 +126,30 @@ def spearman(xs, ys):
 
 
 def main() -> int:
-    if not (ML / "ratings.csv").exists():
-        print(f"MovieLens not found at {ML}/ratings.csv")
+    if not all((ML / name).exists() for name in ("movies.csv", "ratings.csv")):
+        print(f"MovieLens requires movies.csv and ratings.csv in {ML}/")
         return 2
 
     want = {}
     for slug in LINEUPS:
-        name, _note, films, entity_type = _load_lineup(slug)
+        _name, _note, films, _entity_type = _load_lineup(slug)
         for f in films:
-            want[norm(f.title)] = (slug, f, entity_type)
+            entry = want.setdefault(film_key(f), {"film": f, "lineups": set()})
+            entry["lineups"].add(slug)
 
-    ids, titles, made, genres = {}, {}, {}, {}
-    with (ML / "movies.csv").open(encoding="utf-8") as fh:
-        for row in csv.DictReader(fh):
-            key = norm(row["title"])
-            if key not in want:
-                continue
-            ym = re.search(r"\((\d{4})\)\s*$", row["title"])
-            year = int(ym.group(1)) if ym else 0
-            asked = want[key][1].year
-            if asked and year and abs(year - asked) > 1:
-                continue
-            ids[int(row["movieId"])] = key
-            titles[key] = row["title"]
-            made[key] = year
-            genres[key] = {g for g in row.get("genres", "").split("|")
-                           if g and g != "(no genres listed)"}
+    with (ML / "movies.csv").open(encoding="utf-8", newline="") as fh:
+        ids, titles, made, genres, audit = match_movies(want, csv.DictReader(fh))
+    audit_path = Path("data/overlap_matches.json")
+    audit_path.write_text(json.dumps({
+        "policy": "unique normalised title plus exact year; no fuzzy fallback",
+        "matches": audit,
+    }, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"MovieLens match audit: {audit_path}")
+    for record in audit:
+        accepted = record["accepted_movie_ids"]
+        matched = record["candidates"][0]["title"] if accepted else record["status"]
+        print(f"   {record['requested_title']} ({record['requested_year']})"
+              f" -> {matched}; accepted IDs: {accepted}")
 
     print(f"matched {len(titles)} of {len(want)} films across "
           f"{len(LINEUPS)} lineups")
@@ -107,34 +175,29 @@ def main() -> int:
 
     print("asking Qloo for distances")
     qloo = Qloo()
-    distance = {}
+    distance, pops = {}, {}
     for slug in LINEUPS:
-        name, _n, films, entity_type = _load_lineup(slug)
+        _name, _n, films, entity_type = _load_lineup(slug)
         resolved, _missed = resolve_all(qloo, films, entity_type)
         m = matrix_mod.build(qloo, resolved, entity_type)
+        keys = {t: film_key(m.resolved[t].film) for t in m.films}
+        for t in m.films:
+            pops[keys[t]] = m.popularity(t)
         for i, a in enumerate(m.films):
             for b in m.films[i + 1:]:
-                ka, kb = norm(a), norm(b)
+                ka, kb = keys[a], keys[b]
                 if ka in raters and kb in raters:
-                    distance[tuple(sorted((ka, kb)))] = m.distance(a, b)
+                                                                       
+                    ka, kb = sorted((ka, kb))
+                    distance[(slug, ka, kb)] = m.distance(a, b)
 
     rows = []
-    for (a, b), d in sorted(distance.items()):
-        ua, ub = raters[a], raters[b]
-        na, nb = len(ua), len(ub)
-        both = len(ua & ub)
-        if na < MIN_RATERS or nb < MIN_RATERS or both < 5:
+    for (slug, a, b), d in sorted(distance.items()):
+        metrics = pair_metrics(raters[a], raters[b], total)
+        if (metrics["n_a"] < MIN_RATERS or metrics["n_b"] < MIN_RATERS
+                or metrics["both"] < 5):
             continue
-        union = len(ua | ub)
-        jac = both / union if union else 0.0
-        expect = na * nb / total
-        lift = both / expect if expect else 0.0
-        under = math.sqrt(na * nb * (total - na) * (total - nb))
-        phi = ((total * both - na * nb) / under) if under else 0.0
-        rows.append({
-            "pair": (a, b), "d": d, "jaccard": jac, "lift": lift, "phi": phi,
-            "fame": min(na, nb), "gap": abs(na - nb),
-        })
+        rows.append({"lineup": slug, "pair": (a, b), "d": d, **metrics})
 
     if len(rows) < 20:
         print(f"only {len(rows)} usable pairs, not enough")
@@ -142,14 +205,6 @@ def main() -> int:
 
     print(f"\n{len(rows)} pairs with at least {MIN_RATERS} raters each\n")
     ds = [r["d"] for r in rows]
-
-    pops = {}
-    for slug in LINEUPS:
-        _n2, _nt, films2, et2 = _load_lineup(slug)
-        resolved2, _m2 = resolve_all(qloo, films2, et2)
-        m2 = matrix_mod.build(qloo, resolved2, et2)
-        for t in m2.films:
-            pops[norm(t)] = m2.popularity(t)
 
     gj, yd, pd_, target = [], [], [], []
     for r in rows:
@@ -182,7 +237,7 @@ def main() -> int:
         print(f"    {label:<34} {rho:+.3f}" if rho is not None
               else f"    {label:<34} n/a")
 
-    print("\n  the same three against popularity alone:")
+    print("\n  the same three against the smaller title's rater count:")
     fame = [r["fame"] for r in rows]
     for field, label in (("jaccard", "shared raters (Jaccard)"),
                          ("lift", "more shared than chance (lift)"),
@@ -210,7 +265,10 @@ def main() -> int:
         return {"a": titles[a], "b": titles[b], "distance": r["d"],
                 "overlap": round(r["jaccard"], 4),
                 "phi": round(r["phi"], 4), "lift": round(r["lift"], 3),
-                "n": r["fame"]}
+                "n": r["both"], "n_a": r["n_a"], "n_b": r["n_b"],
+                "movie_id_a": next(mid for mid, key in ids.items() if key == a),
+                "movie_id_b": next(mid for mid, key in ids.items() if key == b),
+                "lineup": r["lineup"]}
 
     vpath = Path("data/validation.json")
     if vpath.exists():
@@ -220,6 +278,12 @@ def main() -> int:
         m["overlap_jaccard_rho"] = spearman(ds, [r["jaccard"] for r in rows])
         m["overlap_popularity_rho"] = spearman(fame, [r["phi"] for r in rows])
         m["overlap_pairs"] = len(rows)
+        m["overlap_match_policy"] = "unique normalised title plus exact year"
+        m["overlap_popularity_measure"] = "smaller title's MovieLens rater count"
+        m["overlap_pairs_by_lineup"] = {
+            slug: sum(r["lineup"] == slug for r in rows) for slug in LINEUPS}
+        m["overlap_matched_films"] = len(titles)
+        m["overlap_evaluated_films"] = len({k for r in rows for k in r["pair"]})
         m["closest"] = [row(r) for r in by_distance[:4]]
         m["furthest"] = [row(r) for r in by_distance[-4:]]
         m["all_pairs"] = [row(r) for r in by_distance]
@@ -231,6 +295,11 @@ def main() -> int:
     out.write_text(json.dumps({
         "pairs": len(rows),
         "films": len(titles),
+        "evaluated_films": len({k for r in rows for k in r["pair"]}),
+        "pairs_by_lineup": {slug: sum(r["lineup"] == slug for r in rows)
+                            for slug in LINEUPS},
+        "rater_count_baseline": "smaller title's MovieLens rater count",
+        "all_pairs": [row(r) for r in by_distance],
         "users": total,
         "min_raters": MIN_RATERS,
         "slate": {f: spearman(ds, [r[f] for r in rows])

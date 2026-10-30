@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import json
@@ -43,7 +43,7 @@ def main() -> int:
             resolved, _ = resolve_all(qloo, films, et)
             m = matrix_mod.build(qloo, resolved, et)
             a = S.analyse(m, stability=False)
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:                                          
             print(f"\n{path.stem}: skipped ({type(exc).__name__})")
             continue
 

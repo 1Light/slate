@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import json
@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.build import (LINEUPS, _bridge_check, _compare_row,   # noqa: E402
+from app.build import (LINEUPS, _bridge_check, _compare_row,               
                        _load_lineup, _pipeline)
 
 DATA = Path(__file__).resolve().parent.parent / "data"

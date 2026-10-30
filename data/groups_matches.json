@@ -1,0 +1,1023 @@
+{
+  "policy": "unique normalised title plus exact year; no fuzzy fallback",
+  "matches": [
+    {
+      "requested_title": "2001: A Space Odyssey",
+      "requested_year": 1968,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 924,
+          "title": "2001: A Space Odyssey (1968)",
+          "year": 1968
+        }
+      ],
+      "accepted_movie_ids": [
+        924
+      ]
+    },
+    {
+      "requested_title": "A Brighter Tomorrow",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 286815,
+          "title": "A Brighter Tomorrow (2023)",
+          "year": 2023
+        }
+      ],
+      "accepted_movie_ids": [
+        286815
+      ]
+    },
+    {
+      "requested_title": "A Different Man",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "A Real Pain",
+      "requested_year": 2024,
+      "lineups": [
+        "sundance2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "A Traveler's Needs",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "About Dry Grasses",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 290199,
+          "title": "About Dry Grasses (2023)",
+          "year": 2023
+        }
+      ],
+      "accepted_movie_ids": [
+        290199
+      ]
+    },
+    {
+      "requested_title": "Anatomy of a Fall",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 288773,
+          "title": "Anatomy of a Fall (2023)",
+          "year": 2023
+        }
+      ],
+      "accepted_movie_ids": [
+        288773
+      ]
+    },
+    {
+      "requested_title": "Annihilation",
+      "requested_year": 2018,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 182715,
+          "title": "Annihilation (2018)",
+          "year": 2018
+        }
+      ],
+      "accepted_movie_ids": [
+        182715
+      ]
+    },
+    {
+      "requested_title": "Another End",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Architecton",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Arrival",
+      "requested_year": 2016,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 164179,
+          "title": "Arrival (2016)",
+          "year": 2016
+        }
+      ],
+      "accepted_movie_ids": [
+        164179
+      ]
+    },
+    {
+      "requested_title": "Asteroid City",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 287633,
+          "title": "Asteroid City (2023)",
+          "year": 2023
+        }
+      ],
+      "accepted_movie_ids": [
+        287633
+      ]
+    },
+    {
+      "requested_title": "Banel & Adama",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Between the Temples",
+      "requested_year": 2024,
+      "lineups": [
+        "sundance2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Birdman",
+      "requested_year": 2014,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Black Flies",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Black Tea",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Blade Runner 2049",
+      "requested_year": 2017,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 176371,
+          "title": "Blade Runner 2049 (2017)",
+          "year": 2017
+        }
+      ],
+      "accepted_movie_ids": [
+        176371
+      ]
+    },
+    {
+      "requested_title": "Children of Men",
+      "requested_year": 2006,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 48774,
+          "title": "Children of Men (2006)",
+          "year": 2006
+        }
+      ],
+      "accepted_movie_ids": [
+        48774
+      ]
+    },
+    {
+      "requested_title": "Club Zero",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Dahomey",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Didi",
+      "requested_year": 2024,
+      "lineups": [
+        "sundance2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Dying",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Eternal Sunshine of the Spotless Mind",
+      "requested_year": 2004,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 7361,
+          "title": "Eternal Sunshine of the Spotless Mind (2004)",
+          "year": 2004
+        }
+      ],
+      "accepted_movie_ids": [
+        7361
+      ]
+    },
+    {
+      "requested_title": "Ex Machina",
+      "requested_year": 2014,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Exhibiting Forgiveness",
+      "requested_year": 2024,
+      "lineups": [
+        "sundance2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Fallen Leaves",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 291340,
+          "title": "Fallen Leaves (2023)",
+          "year": 2023
+        }
+      ],
+      "accepted_movie_ids": [
+        291340
+      ]
+    },
+    {
+      "requested_title": "Fargo",
+      "requested_year": 1996,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 608,
+          "title": "Fargo (1996)",
+          "year": 1996
+        }
+      ],
+      "accepted_movie_ids": [
+        608
+      ]
+    },
+    {
+      "requested_title": "Firebrand",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Foreign Language",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Four Daughters",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "From Hilde, with Love",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Gloria!",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Good One",
+      "requested_year": 2024,
+      "lineups": [
+        "sundance2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Her",
+      "requested_year": 2013,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 106920,
+          "title": "Her (2013)",
+          "year": 2013
+        }
+      ],
+      "accepted_movie_ids": [
+        106920
+      ]
+    },
+    {
+      "requested_title": "High Life",
+      "requested_year": 2018,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 193697,
+          "title": "High Life (2018)",
+          "year": 2018
+        }
+      ],
+      "accepted_movie_ids": [
+        193697
+      ]
+    },
+    {
+      "requested_title": "Homecoming",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "In the Summers",
+      "requested_year": 2024,
+      "lineups": [
+        "sundance2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Kidnapped",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 291511,
+          "title": "Kidnapped (2023)",
+          "year": 2023
+        }
+      ],
+      "accepted_movie_ids": [
+        291511
+      ]
+    },
+    {
+      "requested_title": "La Chimera",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "La cocina",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Last Summer",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Lost in Translation",
+      "requested_year": 2003,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 6711,
+          "title": "Lost in Translation (2003)",
+          "year": 2003
+        }
+      ],
+      "accepted_movie_ids": [
+        6711
+      ]
+    },
+    {
+      "requested_title": "Love Me",
+      "requested_year": 2024,
+      "lineups": [
+        "sundance2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "May December",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Melancholia",
+      "requested_year": 2011,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 86320,
+          "title": "Melancholia (2011)",
+          "year": 2011
+        }
+      ],
+      "accepted_movie_ids": [
+        86320
+      ]
+    },
+    {
+      "requested_title": "Monster",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 288807,
+          "title": "Monster (2023)",
+          "year": 2023
+        }
+      ],
+      "accepted_movie_ids": [
+        288807
+      ]
+    },
+    {
+      "requested_title": "Moon",
+      "requested_year": 2009,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 68237,
+          "title": "Moon (2009)",
+          "year": 2009
+        }
+      ],
+      "accepted_movie_ids": [
+        68237
+      ]
+    },
+    {
+      "requested_title": "Mulholland Drive",
+      "requested_year": 2001,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 4848,
+          "title": "Mulholland Drive (2001)",
+          "year": 2001
+        }
+      ],
+      "accepted_movie_ids": [
+        4848
+      ]
+    },
+    {
+      "requested_title": "My Favourite Cake",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "No Country for Old Men",
+      "requested_year": 2007,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 55820,
+          "title": "No Country for Old Men (2007)",
+          "year": 2007
+        }
+      ],
+      "accepted_movie_ids": [
+        55820
+      ]
+    },
+    {
+      "requested_title": "Pepe",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Perfect Days",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Ponyboi",
+      "requested_year": 2024,
+      "lineups": [
+        "sundance2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Primer",
+      "requested_year": 2004,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 8914,
+          "title": "Primer (2004)",
+          "year": 2004
+        }
+      ],
+      "accepted_movie_ids": [
+        8914
+      ]
+    },
+    {
+      "requested_title": "Pulp Fiction",
+      "requested_year": 1994,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 296,
+          "title": "Pulp Fiction (1994)",
+          "year": 1994
+        }
+      ],
+      "accepted_movie_ids": [
+        296
+      ]
+    },
+    {
+      "requested_title": "Shambhala",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Small Things Like These",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Solaris",
+      "requested_year": 1972,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Sons",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Stalker",
+      "requested_year": 1979,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 1232,
+          "title": "Stalker (1979)",
+          "year": 1979
+        }
+      ],
+      "accepted_movie_ids": [
+        1232
+      ]
+    },
+    {
+      "requested_title": "Stress Positions",
+      "requested_year": 2024,
+      "lineups": [
+        "sundance2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Suncoast",
+      "requested_year": 2024,
+      "lineups": [
+        "sundance2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Suspended Time",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "The Big Lebowski",
+      "requested_year": 1998,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 1732,
+          "title": "Big Lebowski, The (1998)",
+          "year": 1998
+        }
+      ],
+      "accepted_movie_ids": [
+        1732
+      ]
+    },
+    {
+      "requested_title": "The Devil's Bath",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "The Empire",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "The Fountain",
+      "requested_year": 2006,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 48043,
+          "title": "Fountain, The (2006)",
+          "year": 2006
+        }
+      ],
+      "accepted_movie_ids": [
+        48043
+      ]
+    },
+    {
+      "requested_title": "The Grand Budapest Hotel",
+      "requested_year": 2014,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 109374,
+          "title": "Grand Budapest Hotel, The (2014)",
+          "year": 2014
+        }
+      ],
+      "accepted_movie_ids": [
+        109374
+      ]
+    },
+    {
+      "requested_title": "The Old Oak",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 291693,
+          "title": "The Old Oak (2023)",
+          "year": 2023
+        }
+      ],
+      "accepted_movie_ids": [
+        291693
+      ]
+    },
+    {
+      "requested_title": "The Taste of Things",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "The Zone of Interest",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "There Will Be Blood",
+      "requested_year": 2007,
+      "lineups": [
+        "_probe-bridge"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 56782,
+          "title": "There Will Be Blood (2007)",
+          "year": 2007
+        }
+      ],
+      "accepted_movie_ids": [
+        56782
+      ]
+    },
+    {
+      "requested_title": "Under the Skin",
+      "requested_year": 2013,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 109848,
+          "title": "Under the Skin (2013)",
+          "year": 2013
+        }
+      ],
+      "accepted_movie_ids": [
+        109848
+      ]
+    },
+    {
+      "requested_title": "Upstream Color",
+      "requested_year": 2013,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 99917,
+          "title": "Upstream Color (2013)",
+          "year": 2013
+        }
+      ],
+      "accepted_movie_ids": [
+        99917
+      ]
+    },
+    {
+      "requested_title": "Who Do I Belong To",
+      "requested_year": 2024,
+      "lineups": [
+        "berlinale2024"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Youth",
+      "requested_year": 2023,
+      "lineups": [
+        "cannes2023"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    }
+  ]
+}

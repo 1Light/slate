@@ -229,7 +229,7 @@ def _bridge_check() -> dict:
             resolved, _ = resolve_all(Qloo(), films, entity_type)
             m = matrix_mod.build(Qloo(), resolved, entity_type)
             a = analyse(m, stability=False)
-        except Exception:                                   # noqa: BLE001
+        except Exception:                                                 
             continue
 
         names = m.films
@@ -413,20 +413,29 @@ def _shape_from(name, note, m, source, unresolved, entity_type,
     return shape, a
 
 
-def _best_subset_fast(m, keep: int):
+def _best_subset_fast(m, keep: int, locked: list[str] | None = None):
     from itertools import combinations
     titles = sorted(m.films)
     if keep >= len(titles):
         return titles
 
-    if _choose(len(titles), keep) <= ENUMERATE_UP_TO:
-        return list(max(combinations(titles, keep),
+    held = [t for t in titles if t in set(locked or [])]
+    if len(held) >= keep:
+        return held[:keep]
+    free = [t for t in titles if t not in set(held)]
+    want = keep - len(held)
+
+    if _choose(len(free), want) <= ENUMERATE_UP_TO:
+        return list(max((tuple(held) + c for c in combinations(free, want)),
                         key=lambda c: _profile(m, list(c))))
 
     chosen = list(titles)
     while len(chosen) > keep:
+        droppable = [t for t in chosen if t not in set(held)]
+        if not droppable:
+            break
         chosen = list(max(
-            (tuple(x for x in chosen if x != t) for t in chosen),
+            (tuple(x for x in chosen if x != t) for t in droppable),
             key=lambda c: _profile(m, list(c))))
     return chosen
 
@@ -505,7 +514,7 @@ def _contribution(m, lineup, candidate):
     }
 
 
-def _fit_brief(m, lineup, candidate, pool=None, slots=None):
+def _fit_brief(m, lineup, candidate, pool=None, slots=None, locked=None):
     was = analyse(_subset(m, lineup), stability=False)
     now = analyse(_subset(m, lineup + [candidate]), stability=False)
 
@@ -536,9 +545,10 @@ def _fit_brief(m, lineup, candidate, pool=None, slots=None):
         if any(i["film"] == candidate for i in now.isolated):
             role = "alone"
 
+    held = set(locked or [])
     spare = None
     for a, b, d, g in now.tightest_pairs:
-        if candidate in (a, b):
+        if candidate in (a, b) or a in held or b in held:
             continue
         spare = {"films": [a, b], "distance": round(d, 6), "group": g}
         break

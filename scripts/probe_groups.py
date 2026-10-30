@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import csv
@@ -8,16 +8,17 @@ import random
 import re
 import statistics as stats
 import sys
+import unicodedata
 from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import matrix as matrix_mod            # noqa: E402
-from app.build import _load_lineup              # noqa: E402
-from app.qloo import Qloo                       # noqa: E402
-from app.resolve import resolve_all             # noqa: E402
-from app.structure import analyse               # noqa: E402
+from app import matrix as matrix_mod                        
+from app.build import _load_lineup                          
+from app.qloo import Qloo                                   
+from app.resolve import resolve_all                         
+from app.structure import analyse                           
 
 ML = Path("data/ml-32m")
 LINEUPS = ["one-genre", "_probe-bridge", "berlinale2024", "cannes2023",
@@ -27,41 +28,97 @@ SHUFFLES = 10_000
 
 
 def norm(title: str) -> str:
-    t = re.sub(r"\s*\(\d{4}\)\s*$", "", title).strip().lower()
-    t = re.sub(r"^(the|a|an)\s+", "", t)
-    t = re.sub(r",\s*(the|a|an)$", "", t)
-    return re.sub(r"[^a-z0-9]+", "", t)
+                                                                      
+    t = re.sub(r"\s*\(\d{4}\)\s*$", "", title).strip().casefold()
+                                                                 
+    article = re.fullmatch(r"(.+),\s*(the|a|an|la|le|les|el|il|der|die|das)", t)
+    if article:
+        t = f"{article.group(2)} {article.group(1)}"
+    t = unicodedata.normalize("NFKD", t)
+    t = "".join(c for c in t if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", " ", t).strip()
+
+
+def film_key(film):
+                                                                   
+    return norm(film.title), int(film.year or 0)
+
+
+def match_movies(want, movie_rows):
+                                                                           
+
+                                                                              
+                                                                                
+       
+    catalog = defaultdict(dict)
+    for row in movie_rows:
+        catalog[norm(row["title"])][int(row["movieId"])] = row
+
+    ids, titles, made, genres, audit = {}, {}, {}, {}, []
+    for key, entry in sorted(want.items()):
+        title_key, asked = key
+        candidates = []
+        for mid, row in sorted(catalog.get(title_key, {}).items()):
+            ym = re.search(r"\((\d{4})\)\s*$", row["title"])
+            year = int(ym.group(1)) if ym else 0
+            if asked and year == asked:
+                candidates.append((mid, row, year))
+        status = ("matched" if len(candidates) == 1 else
+                  "ambiguous" if candidates else "unmatched")
+        record = {
+            "requested_title": entry["film"].title,
+            "requested_year": asked,
+            "lineups": sorted(entry["lineups"]),
+            "status": status,
+            "candidates": [{"movie_id": mid, "title": row["title"], "year": year}
+                           for mid, row, year in candidates],
+            "accepted_movie_ids": [],
+        }
+        if status == "matched":
+            mid, row, year = candidates[0]
+            if mid in ids and ids[mid] != key:
+                raise ValueError(f"MovieLens ID {mid} matched two requested films")
+            ids[mid] = key
+            titles[key] = row["title"]
+            made[key] = year
+            genres[key] = {g for g in row.get("genres", "").split("|")
+                           if g and g != "(no genres listed)"}
+            record["accepted_movie_ids"] = [mid]
+        audit.append(record)
+    return ids, titles, made, genres, audit
+
 
 
 def main() -> int:
-    if not (ML / "ratings.csv").exists():
-        print(f"MovieLens not found at {ML}/ratings.csv")
+    if not all((ML / name).exists() for name in ("movies.csv", "ratings.csv")):
+        print(f"MovieLens requires movies.csv and ratings.csv in {ML}/")
         return 2
 
     want = {}
     for slug in LINEUPS:
         _name, _note, films, _et = _load_lineup(slug)
         for f in films:
-            want[norm(f.title)] = f
+            entry = want.setdefault(film_key(f), {"film": f, "lineups": set()})
+            entry["lineups"].add(slug)
 
-    ids, titles = {}, {}
-    with (ML / "movies.csv").open(encoding="utf-8") as fh:
-        for row in csv.DictReader(fh):
-            key = norm(row["title"])
-            if key not in want:
-                continue
-            ym = re.search(r"\((\d{4})\)\s*$", row["title"])
-            year = int(ym.group(1)) if ym else 0
-            asked = want[key].year
-            if asked and year and abs(year - asked) > 1:
-                continue
-            ids[int(row["movieId"])] = key
-            titles[key] = row["title"]
+    with (ML / "movies.csv").open(encoding="utf-8", newline="") as fh:
+        ids, titles, _made, _genres, audit = match_movies(want, csv.DictReader(fh))
+    audit_path = Path("data/groups_matches.json")
+    audit_path.write_text(json.dumps({
+        "policy": "unique normalised title plus exact year; no fuzzy fallback",
+        "matches": audit,
+    }, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"MovieLens match audit: {audit_path}")
+    for record in audit:
+        accepted = record["accepted_movie_ids"]
+        matched = record["candidates"][0]["title"] if accepted else record["status"]
+        print(f"   {record['requested_title']} ({record['requested_year']})"
+              f" -> {matched}; accepted IDs: {accepted}")
 
     print(f"matched {len(titles)} of {len(want)} titles")
 
     print("reading ratings")
-    raters: dict[str, set] = defaultdict(set)
+    raters: dict[tuple[str, int], set] = defaultdict(set)
     seen = set()
     with (ML / "ratings.csv").open(encoding="utf-8") as fh:
         for row in csv.reader(fh):
@@ -74,7 +131,7 @@ def main() -> int:
     total = len(seen)
     print(f"   {total:,} users in the dataset")
 
-    def both_seen(a: str, b: str):
+    def both_seen(a: tuple[str, int], b: tuple[str, int]):
         ua, ub = raters.get(a), raters.get(b)
         if not ua or not ub:
             return None
@@ -82,7 +139,7 @@ def main() -> int:
             return None
         return ua, ub
 
-    def phi(a: str, b: str) -> float | None:
+    def phi(a: tuple[str, int], b: tuple[str, int]) -> float | None:
         pair = both_seen(a, b)
         if pair is None:
             return None
@@ -91,7 +148,7 @@ def main() -> int:
         under = math.sqrt(na * nb * (total - na) * (total - nb))
         return ((total * both - na * nb) / under) if under else None
 
-    def jaccard(a: str, b: str) -> float | None:
+    def jaccard(a: tuple[str, int], b: tuple[str, int]) -> float | None:
         pair = both_seen(a, b)
         if pair is None:
             return None
@@ -111,16 +168,17 @@ def main() -> int:
         a = analyse(m, stability=False)
         member = {t: i for i, c in enumerate(a.clusters) for t in c}
 
+        keys = {t: film_key(m.resolved[t].film) for t in m.films}
         covered = [t for t in m.films
-                   if len(raters.get(norm(t), ())) >= MIN_RATERS]
+                   if len(raters.get(keys[t], ())) >= MIN_RATERS]
         values, jac = {}, {}
         for i, x in enumerate(covered):
             for y in covered[i + 1:]:
-                v = phi(norm(x), norm(y))
+                v = phi(keys[x], keys[y])
                 if v is None:
                     continue
                 values[(x, y)] = v
-                j = jaccard(norm(x), norm(y))
+                j = jaccard(keys[x], keys[y])
                 if j is not None:
                     jac[(x, y)] = j
 
@@ -215,6 +273,10 @@ def main() -> int:
     if vpath.exists():
         v = json.loads(vpath.read_text(encoding="utf-8"))
         v["groups"] = {
+            "match_policy": "unique normalised title plus exact year",
+            "match_audit": str(audit_path),
+            "seed": 20260125,
+            "min_raters": MIN_RATERS,
             "inside_pairs": counts["values"][0],
             "between_pairs": counts["values"][1],
             "inside_mean": round(counts["values"][2], 5),

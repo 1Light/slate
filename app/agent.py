@@ -63,12 +63,17 @@ def _score(headline: dict, slate: int) -> float:
     return reach - crowding - shredding + headline["bridges"] * 0.5
 
 
-def _most_redundant(analysis: Analysis, matrix: Matrix) -> str | None:
+def _most_redundant(analysis: Analysis, matrix: Matrix,
+                    locked: set[str] | None = None) -> str | None:
+    held = locked or set()
     groups = [g for g in analysis.clusters if len(g) >= 3]
     if not groups:
         return None
     biggest = max(groups, key=len)
-    return min(biggest, key=lambda f: analysis.centrality[f])
+    free = [f for f in biggest if f not in held]
+    if not free:
+        return None
+    return min(free, key=lambda f: analysis.centrality[f])
 
 
 def _centre_of_mass(analysis: Analysis) -> list[str]:
@@ -176,7 +181,9 @@ def _explain(swap: Swap, analysis_before: Analysis, slate_name: str) -> str:
 def improve(qloo: Qloo, matrix: Matrix, analysis: Analysis,
             slate_name: str = "this slate",
             entity_type: str = "urn:entity:movie",
-            rounds: int = MAX_ROUNDS) -> AgentResult:
+            rounds: int = MAX_ROUNDS,
+            locked: list[str] | None = None) -> AgentResult:
+    held = set(locked or [])
     steps: list[Step] = []
     swaps: list[Swap] = []
     rejected: list[dict] = []
@@ -192,9 +199,16 @@ def improve(qloo: Qloo, matrix: Matrix, analysis: Analysis,
             {"round": round_no, **headline},
         ))
 
-        out_title = _most_redundant(analysis, matrix)
+        out_title = _most_redundant(analysis, matrix, held)
         if not out_title:
-            steps.append(Step("stop", "No group is crowded enough to be worth thinning."))
+            crowded = [g for g in analysis.clusters if len(g) >= 3]
+            if crowded and all(f in held for g in crowded for f in g):
+                steps.append(Step("stop", "Every title in the crowded "
+                                          "groups is locked, so there is "
+                                          "nothing to swap out."))
+            else:
+                steps.append(Step("stop", "No group is crowded enough to "
+                                          "be worth thinning."))
             break
 
         steps.append(Step(

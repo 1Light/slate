@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import json
@@ -50,7 +50,7 @@ def main() -> int:
     for path in sorted(Path("data/lineups").glob("*.json")):
         try:
             r = run(path, warm)
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:                                          
             print(f"\n{path.stem}: skipped ({type(exc).__name__})")
             continue
         if r:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import sys
@@ -6,14 +6,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import agent as agent_mod          # noqa: E402
-from app import matrix as matrix_mod         # noqa: E402
+from app import agent as agent_mod                      
+from app import matrix as matrix_mod                     
 from app.build import (ENTITY_LABEL, _films_from_lines,
-                       _load_lineup)           # noqa: E402
-from app.resolve import Film                 # noqa: E402
-from app.qloo import Qloo, QlooError         # noqa: E402
-from app.resolve import resolve_all          # noqa: E402
-from app.structure import analyse            # noqa: E402
+                       _load_lineup)                       
+from app.resolve import Film                             
+from app.qloo import Qloo, QlooError                     
+from app.resolve import resolve_all                      
+from app.structure import analyse                        
 
 ROOT = Path(__file__).resolve().parent.parent
 LINEUPS = ROOT / "data" / "lineups"

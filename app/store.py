@@ -50,6 +50,10 @@ def _pg():
                         "ON workspaces (owner, touched DESC)")
             con.execute("ALTER TABLE workspaces "
                         "ADD COLUMN IF NOT EXISTS placed INTEGER")
+            con.execute("ALTER TABLE workspaces "
+                        "ADD COLUMN IF NOT EXISTS audience TEXT")
+            con.execute("ALTER TABLE workspaces "
+                        "ADD COLUMN IF NOT EXISTS locked TEXT")
         _PG = pool
         return pool
     except Exception:
@@ -73,10 +77,12 @@ def _lite():
         )""")
     con.execute("CREATE INDEX IF NOT EXISTS workspaces_owner "
                 "ON workspaces (owner, touched DESC)")
-    try:
-        con.execute("ALTER TABLE workspaces ADD COLUMN placed INTEGER")
-    except sqlite3.OperationalError:
-        pass
+    for column, kind in (("placed", "INTEGER"), ("audience", "TEXT"),
+                         ("locked", "TEXT")):
+        try:
+            con.execute(f"ALTER TABLE workspaces ADD COLUMN {column} {kind}")
+        except sqlite3.OperationalError:
+            pass
     con.commit()
     return con
 
@@ -101,44 +107,56 @@ def backend() -> str:
     return "postgres" if _pg() else "sqlite"
 
 
+COLUMNS = ("id, owner, name, entity_type, slots, titles, versions, "
+           "touched, placed, audience, locked")
+
+
 def _row(r) -> dict:
     return {
         "id": r[0], "name": r[2], "entity_type": r[3], "slots": r[4],
         "titles": json.loads(r[5]), "versions": json.loads(r[6]),
         "touched": r[7],
-        "placed": r[8] if len(r) > 8 else None,
+        "placed": r[8],
+        "audience": json.loads(r[9]) if r[9] else None,
+        "locked": json.loads(r[10]) if r[10] else [],
     }
 
 
 def listing(owner: str) -> list[dict]:
-    rows = _run("SELECT * FROM workspaces WHERE owner = %s "
+    rows = _run(f"SELECT {COLUMNS} FROM workspaces WHERE owner = %s "
                 "ORDER BY touched DESC LIMIT %s",
                 (owner, MAX_WORKSPACES), fetch=True) or []
     return [_row(r) for r in rows]
 
 
 def read(owner: str, wid: str) -> dict | None:
-    rows = _run("SELECT * FROM workspaces WHERE owner = %s AND id = %s",
+    rows = _run(f"SELECT {COLUMNS} FROM workspaces WHERE owner = %s AND id = %s",
                 (owner, wid), fetch=True) or []
     return _row(rows[0]) if rows else None
 
 
 def create(owner: str, name: str, titles: list[str], entity_type: str,
-           slots: int | None = None) -> dict:
+           slots: int | None = None, audience: dict | None = None,
+           locked: list[str] | None = None) -> dict:
     titles = [t.strip() for t in titles if t.strip()][:MAX_TITLES]
     wid = uuid.uuid4().hex
     now = time.time()
     old = listing(owner)
     for extra in old[MAX_WORKSPACES - 1:]:
         remove(owner, extra["id"])
+    kept = json.dumps(audience) if audience else None
+    held = [t for t in (locked or []) if t in titles]
     _run("INSERT INTO workspaces "
-         "(id, owner, name, entity_type, slots, titles, versions, touched) "
-         "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+         "(id, owner, name, entity_type, slots, titles, versions, touched, "
+         "audience, locked) "
+         "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
          (wid, owner, name[:120] or "Workspace", entity_type,
-          slots or len(titles), json.dumps(titles), json.dumps([]), now))
+          slots or len(titles), json.dumps(titles), json.dumps([]), now,
+          kept, json.dumps(held) if held else None))
     return {"id": wid, "name": name[:120] or "Workspace",
             "entity_type": entity_type, "slots": slots or len(titles),
-            "titles": titles, "versions": [], "touched": now}
+            "titles": titles, "versions": [], "touched": now,
+            "placed": None, "audience": audience, "locked": held}
 
 
 def update(owner: str, wid: str, **fields) -> dict | None:
@@ -159,12 +177,20 @@ def update(owner: str, wid: str, **fields) -> dict | None:
         row["placed"] = got if isinstance(got, int) and got >= 0 else None
     if "titles" in fields and "placed" not in fields:
         row["placed"] = None
+    if "audience" in fields:
+        row["audience"] = fields["audience"] or None
+    if "locked" in fields:
+        row["locked"] = list(fields["locked"] or [])
+    row["locked"] = [t for t in row.get("locked") or []
+                     if t in row["titles"]]
     row["touched"] = time.time()
     _run("UPDATE workspaces SET name = %s, slots = %s, titles = %s, "
-         "versions = %s, touched = %s, placed = %s "
-         "WHERE owner = %s AND id = %s",
+         "versions = %s, touched = %s, placed = %s, audience = %s, "
+         "locked = %s WHERE owner = %s AND id = %s",
          (row["name"], row["slots"], json.dumps(row["titles"]),
           json.dumps(row["versions"]), row["touched"], row["placed"],
+          json.dumps(row["audience"]) if row.get("audience") else None,
+          json.dumps(row["locked"]) if row["locked"] else None,
           owner, wid))
     return row
 

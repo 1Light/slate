@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import json
@@ -8,10 +8,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import matrix as matrix_mod                        # noqa: E402
-from app.qloo import Qloo                                   # noqa: E402
-from app.resolve import Film, resolve_all                   # noqa: E402
-from app.structure import (KNN_VALUES, _betweenness, _knn,  # noqa: E402
+from app import matrix as matrix_mod                                    
+from app.qloo import Qloo                                               
+from app.resolve import Film, resolve_all                               
+from app.structure import (KNN_VALUES, _betweenness, _knn,              
                            analyse)
 
 RNG = random.Random(7)
@@ -59,7 +59,7 @@ def main() -> int:
             resolved, _ = resolve_all(qloo, films, et)
             m = matrix_mod.build(qloo, resolved, et)
             a = analyse(m)
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:                                          
             print(f"\n{data.get('name', path.stem)}: skipped ({type(exc).__name__})")
             continue
 

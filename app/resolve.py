@@ -46,11 +46,14 @@ def normalise(value: str) -> str:
 
 def score_candidate(entity: dict, film: Film) -> int:
     score = 0
+    raw = (name_of(entity) or "").strip().casefold()
     candidate = normalise(name_of(entity))
     titles = [normalise(t) for t in film.all_titles]
 
     if candidate in titles:
         score += 5
+        if any(raw == t.strip().casefold() for t in film.all_titles):
+            score += 1
     elif any(t and (t in candidate or candidate in t) for t in titles):
         score += 2
 

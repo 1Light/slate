@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import sys
@@ -6,9 +6,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.build import ENTITY_LABEL, _films_from_lines   # noqa: E402
-from app.qloo import Qloo                               # noqa: E402
-from app.resolve import resolve_film                    # noqa: E402
+from app.build import ENTITY_LABEL, _films_from_lines               
+from app.qloo import Qloo                                           
+from app.resolve import resolve_film                                
 
 TYPES = list(ENTITY_LABEL)
 

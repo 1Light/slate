@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import sys
@@ -7,9 +7,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.build import _load_lineup        # noqa: E402
-from app.qloo import Qloo, id_of          # noqa: E402
-from app.resolve import resolve_all       # noqa: E402
+from app.build import _load_lineup                    
+from app.qloo import Qloo, id_of                      
+from app.resolve import resolve_all                   
 
 ROUNDS = 3
 

@@ -340,8 +340,10 @@ function board(d, ui) {
 
   const spendBand = () => {
     spend.textContent = '';
+    const held = new Set(d.locked || []);
     const usable = d.clusters.filter((c) => c.films.length >= 3
-      && d.tightest.some((t) => t.cluster === c.index));
+      && d.tightest.some((t) => t.cluster === c.index
+        && !held.has(t.a) && !held.has(t.b)));
     if (!usable.length) return;
 
     if (d.weak) { spend.textContent = ''; return; }
@@ -358,7 +360,8 @@ function board(d, ui) {
       if (c.films.length < 3) return;
       const pairs = d.tightest
         .filter((t) => t.cluster === c.index
-          && !bridged.has(t.a) && !bridged.has(t.b))
+          && !bridged.has(t.a) && !bridged.has(t.b)
+          && !held.has(t.a) && !held.has(t.b))
         .slice(0, 1);
       pairs.forEach((t) => {
         const li = el('li');
@@ -560,6 +563,7 @@ function controlFigure(d, host) {
       col.appendChild(columnHead(c.films.length, i, d.noun, d.nouns));
       c.films.slice().sort().forEach((t) => {
         const row = el('span', 'film');
+        row.dataset.title = t;
         row.appendChild(document.createTextNode(t));
         col.appendChild(row);
       });
@@ -571,7 +575,7 @@ function controlFigure(d, host) {
 function groupTable(g) {
   const t = el('table', 'pairs');
   const head = el('tr', 'head');
-  [['', ''], ['Shared audience', 'r']].forEach(([label, cls]) => {
+  [['', ''], ['Audience overlap', 'r']].forEach(([label, cls]) => {
     head.appendChild(el('td', cls, label));
   });
   t.appendChild(head);
@@ -608,7 +612,7 @@ function mlTables(ml, which) {
   const t = el('table', 'pairs');
   const headRow = () => {
     const tr = el('tr', 'head');
-    ['Distance', 'Pair', 'Shared audience', 'Rated both'].forEach((label, i) => {
+    ['Distance', 'Pair', 'Audience overlap', 'Rated both'].forEach((label, i) => {
       tr.appendChild(el('td', i === 0 ? 'd' : i === 1 ? '' : 'r', label));
     });
     t.appendChild(tr);
@@ -711,14 +715,13 @@ async function tests() {
     const art = test(1, 'Does Slate just group by genre?');
     say(art, `${Caps(spell(control.films.length))} science fiction films were `
       + 'given to Slate as one lineup. Every one of them carries the same '
-      + 'genre tag. If Slate were grouping by genre, they would all come back '
-      + 'as one group.');
+      + 'science-fiction tag.');
     const fig = el('div', 'control-figure');
     controlFigure(control, fig);
     art.appendChild(fig);
-    below(art, `They come back as ${spell(control.clusters.length)}. So Slate `
-      + 'is not grouping by genre: it is reading something the genre tag does '
-      + 'not contain.', 'closing-line');
+    below(art, `Slate separates them into ${spell(control.clusters.length)} `
+      + 'groups using Qloo’s affinity rankings. The shared tag alone does '
+      + 'not describe those differences.', 'closing-line');
   }
 
   if (v && v.movielens) {
@@ -731,23 +734,28 @@ async function tests() {
 
     const g = v && v.groups;
     if (g) {
-      say(art, 'Slate prepared two lineups that MovieLens covers well, one '
-        + 'of 12 titles and one of 14. Each was clustered into groups '
-        + 'separately, using Qloo alone.', 'sub-head');
+      const measured = g.lineups || [];
+      const sizes = measured.map((row) => row.titles);
+      say(art, sizes.length === 2
+        ? `Slate tested two lineups with sufficient MovieLens coverage, evaluating ${sizes[0]} films in one and ${sizes[1]} in the other. Each lineup was clustered separately, using Qloo alone.`
+        : 'Slate tested lineups with sufficient MovieLens coverage. Each lineup was clustered separately, using Qloo alone.', 'sub-head');
       say(art, 'Every possible pair within a lineup was then constructed, '
         + 'and Slate used MovieLens ratings to determine each pair\u2019s '
-        + 'shared audience.');
+        + 'audience overlap. This is based on which users rated both films, '
+        + 'rather than whether they liked them.');
       say(art, 'All the pairs Slate had placed in the same group, across '
         + 'both lineups, were pooled into one pile; those it had split apart '
-        + 'went into another. The shared audience was averaged for each '
+        + 'went into another. Audience overlap was averaged for each '
         + `pile. For pairs in the same group it came to ${g.inside_mean.toFixed(2)}, `
         + `and for pairs in different groups ${g.between_mean.toFixed(2)}. `
         + `The gap is ${g.gap.toFixed(2)}.`);
       art.appendChild(titled(null, groupTable(g)));
-      below(art, 'To be sure this was not luck, Slate scrambled which film '
-        + 'belonged to which group and measured again, ten thousand times '
-        + 'over. No random arrangement ever came close to matching '
-        + `Slate\u2019s own grouping. The gap was never close to ${g.gap.toFixed(2)}.`);
+      below(art, 'Slate randomly moved films between groups, keeping the '
+        + 'same number of films in each group, and measured again '
+        + `${Number(g.shuffles).toLocaleString('en-GB')} times. `
+        + (g.reached === 0
+          ? 'None produced a gap as large as Slate’s.'
+          : `${g.reached} produced a gap as large as Slate’s.`));
     }
 
     say(art, 'Does the distance behind the groups hold up?', 'sub-head');
@@ -755,47 +763,53 @@ async function tests() {
       + 'places two films. That number comes from Qloo\u2019s rankings. Slate '
       + 'asks Qloo about each film, sees where it places the others, and '
       + 'averages the two directions.');
-    say(art, `For the ${ml.pairs} pairs in the science fiction season, here `
+    say(art, `For the ${ml.overlap_pairs} pairs in the science fiction season, here `
       + 'are the four Slate places closest and the four it places furthest. '
-      + 'Shared audience is measured from MovieLens.');
+      + 'Audience overlap is measured from MovieLens.');
     art.appendChild(titled(null, mlTables(ml, 'pairs')));
     if (ml.overlap_rho != null) {
       below(art, `Across all ${ml.overlap_pairs} pairs, Slate measured the `
         + 'relationship between two things: how far apart it places a pair, '
         + 'and how much their audiences overlap. The measure runs from '
-        + '\u22121 to +1. Zero means no relationship at all; \u22121 means a '
-        + 'perfect one in the opposite direction, where more distance always '
-        + 'means less overlap.');
+        + '\u22121 to +1. Zero means no consistent tendency for one measure '
+        + 'to rise or fall with the other; \u22121 means a perfect ranking in '
+        + 'the opposite direction, where more distance always means less '
+        + 'overlap.');
       below(art, `That relationship scored ${ml.overlap_rho.toFixed(3)}. The `
         + 'further apart Slate places two films, the less their audiences '
-        + 'overlap.');
-      below(art, 'The same measure was then run on popularity against '
-        + 'audience overlap, to check whether fame explains the result '
-        + `instead. It scored ${ml.overlap_popularity_rho > 0 ? '+' : ''}`
-        + `${ml.overlap_popularity_rho.toFixed(3)}, which is weak and points `
-        + 'the other way. Hence, Slate is reading shared audience, not fame.');
+        + 'tend to overlap.');
+      below(art, 'Could the result simply reflect how widely rated the '
+        + 'films are? Slate checked this using the number of MovieLens '
+        + 'ratings for the less-rated film in each pair. Its relationship '
+        + 'with audience overlap scored '
+        + `${ml.overlap_popularity_rho > 0 ? '+' : ''}${ml.overlap_popularity_rho.toFixed(3)}.`);
+      below(art, 'Slate also checked whether films released closer together '
+        + 'tend to share an audience. That relationship scored −0.596. '
+        + 'Slate’s distance showed the strongest relationship with audience '
+        + `overlap, at ${ml.overlap_rho.toFixed(3)}.`);
     }
     below(art, 'Finally the same measure was run on distance against how '
       + 'closely the people who saw both films agreed about them. It scored '
       + `${ml.rho.toFixed(3)}. The further apart Slate places two films, the `
-      + 'less the people who saw both agreed.');
-    below(art, 'Hence the groups Slate makes match how people actually '
-      + 'behave, and the distance they are built from does too.',
+      + 'less closely their viewers’ ratings tended to agree.');
+    below(art, 'These checks support a relationship between Slate’s '
+      + 'grouping, its distances and MovieLens rating behaviour on the '
+      + 'films tested.',
       'closing-line');
 
-    const art2 = test('2b', 'Could metadata make the same groups Slate does?');
+    const art2 = test('2b', 'Could metadata explain rating agreement as well?');
     art2.classList.add('sub');
-    say(art2, 'Genre, release year and popularity are free: anyone has them '
-      + 'without an API. If one of them explained agreement as well as '
-      + 'Slate\u2019s distance does, Slate would not be needed.');
+    say(art2, 'Could genre, release year or popularity explain the same '
+      + 'pattern? Slate compared each with the rating agreement between '
+      + 'films in MovieLens.');
     say(art2, `Every pair of films in the lineup, ${ml.pairs} of them, was `
       + 'tested again against the same MovieLens agreement numbers, using a '
       + 'different measure of closeness each time:');
     const ul = el('ul', 'defs');
     [['Slate distance', 'how far apart Slate places the two films'],
-     ['Shared genres', 'how many genre tags the two films have in common'],
+     ['Shared genres', 'the proportion of their combined genre tags that both films share'],
      ['Years apart', 'the gap between their release years'],
-     ['Popularity gap', 'the difference in how well known they are']]
+     ['Popularity gap', 'the difference between their Qloo popularity scores']]
       .forEach(([k, t]) => {
         const li = el('li');
         li.appendChild(el('b', null, k));
@@ -807,33 +821,31 @@ async function tests() {
       + 'comes from Qloo.');
     say(art2, 'For each measure, Slate correlated it against the agreement '
       + `numbers across all ${ml.pairs} pairs. A number near zero means that `
-      + 'measure tells you nothing about whether two films\u2019 viewers '
-      + 'agreed. The further from zero, the more it tells you.');
+      + 'measure has little consistent relationship with how closely the '
+      + 'viewers’ ratings agreed. A larger absolute number means a stronger '
+      + 'relationship in this sample.');
     art2.appendChild(titled('Correlated against the same agreement numbers',
       mlTables(ml, 'baselines')));
-    below(art2, `Next to Slate\u2019s ${ml.rho.toFixed(3)}, the other three `
-      + 'sit near zero. Slate\u2019s distance tells you far more about whether '
-      + 'two films\u2019 viewers agreed than any of them.');
-    below(art2, 'Hence metadata cannot make these groups. Slate is reading '
-      + 'something it does not contain.', 'closing-line');
+    below(art2, `On these ${ml.pairs} pairs, Slate’s distance had a stronger `
+      + 'relationship with rating agreement than shared genres, '
+      + 'release-year difference or popularity difference.', 'closing-line');
   }
 
   if (control && control.stability) {
     const st = control.stability;
     const art = test(3, 'How sensitive are the groups to the lineup itself?');
-    say(art, 'If a group only exists because one particular film happens to '
-      + 'be in the lineup, it is not telling you anything. So Slate removes '
-      + 'each film in turn and redoes the whole analysis: re-ranks the '
-      + 'remaining films against each other, rebuilds the distances, and lets '
-      + 'the engine choose how many groups it wants from scratch. Then it '
-      + 'compares the result against the original.');
-    say(art, 'If the groups are real, every remaining film should land back '
-      + 'in the same group it was in before.');
+    say(art, 'A useful grouping should remain reasonably stable when an '
+      + 'individual film leaves. Slate checks this by removing each film in '
+      + 'turn and analysing the remaining lineup. It re-ranks the remaining '
+      + 'films using the stored Qloo rankings, rebuilds the distances and '
+      + 'lets the engine choose the groups again. Then it compares the result '
+      + 'against the original.');
+    say(art, 'The more the same films stay together after one is removed, '
+      + 'the less the grouping depends on that film being present.');
     say(art, 'The comparison is scored with the adjusted Rand index, a '
-      + 'standard measure of how closely two groupings agree (the new '
-      + 'grouping against the original). It runs from 0 to 1. A score of 1.00 '
-      + 'means identical, above 0.8 means largely intact, and 0.6 to 0.8 '
-      + 'means mostly intact with some films moving.');
+      + 'standard measure of how closely two groupings agree. A score of 1 '
+      + 'means identical groupings, while a score around 0 means agreement '
+      + 'no better than chance. Negative scores are also possible.');
     if (v && v.lineup_ari) {
       art.appendChild(titled(null, ariTable(v.lineup_ari)));
     }
@@ -843,12 +855,12 @@ async function tests() {
       + 'averaged over every run.');
     say(art, 'The shuffled column shows what a group of that size scores '
       + 'when every film\u2019s ranking is randomised and the test is run '
-      + 'again. That is what chance alone produces. The gap between the two '
-      + 'columns is what Slate\u2019s grouping adds beyond chance.');
+      + 'again. This provides a comparison under random rankings. The gap '
+      + 'shows how much more stable Slate’s groups were in this test.');
     art.appendChild(titled('Each group on its own, science fiction lineup',
       stabilityTable(st)));
-    below(art, 'Hence the groups do not depend on any one film being in the '
-      + 'lineup.', 'closing-line');
+    below(art, 'Across these four lineups, the groups remained largely '
+      + 'stable when individual films were removed.', 'closing-line');
   }
 
   if (v && v.bridge && v.bridge.rows && v.bridge.rows.length) {
@@ -877,14 +889,14 @@ async function tests() {
       + '(Spearman):');
     art.appendChild(titled('Betweenness against popularity, by lineup',
       bridgeTable(b)));
-    below(art, 'They do not rise and fall together. Two lineups come out '
-      + `positive, two negative, and across all ${b.films} films the `
-      + 'relationship is nothing.');
+    below(art, 'The relationship varies by lineup: two correlations are '
+      + `positive and two negative. Across all ${b.films} films, the pooled `
+      + `correlation is weak at ${b.pooled_rho > 0 ? '+' : ''}${b.pooled_rho.toFixed(2)}.`);
     below(art, 'High betweenness alone is not enough to be called a bridge. '
       + 'Slate builds the graph three times, connecting each film to its 2, 3 '
       + 'and 4 nearest, and a film only qualifies if it stays in the top '
-      + 'three every time. A film that leads on one setting and falls away on '
-      + 'another was never a connector.');
+      + 'three every time. A film that ranks highly under one setting but '
+      + 'falls away under another does not pass Slate’s bridge filter.');
     if (b.caught) {
       const p = el('p');
       p.appendChild(document.createTextNode(
@@ -925,21 +937,16 @@ async function tests() {
       + 'own. They separate again. Nothing changed about the films. The '
       + 'sixteen they were being compared against are gone, so the only '
       + 'differences left are the ones between those four.');
-    say(five, 'This is true of taste in general. Give a person twenty films '
-      + 'and they will group them one way. Give them four and they will group '
-      + 'them another, because taste is the result of a mixture of several '
-      + 'things, like the genre, the story, the era, who is in it and much '
-      + 'else besides. So however small a lineup gets, there is always some '
-      + 'difference left to group by. This is what Slate demonstrates.');
-    say(five, 'Slate stops before that becomes meaningless. It tries every '
-      + 'possible number of groups and measures how much tighter each one '
-      + 'is: how much closer an item sits to its own group than to the '
-      + 'nearest other.');
+    say(five, 'This is true of how people compare films too. Give a person '
+      + 'twenty films and they may group them one way. Give them four and '
+      + 'they may group them another, because different similarities and '
+      + 'differences stand out.');
+    say(five, 'Slate compares possible divisions using silhouette scores: '
+      + 'how closely an item sits within its own group compared with the '
+      + 'nearest other group.');
     const found = el('p');
-    found.appendChild(el('b', null, 'Slate finds the minimum number of '
-      + 'groups where the division is most meaningful.'));
-    found.appendChild(document.createTextNode(' Beyond that, splitting '
-      + 'further scores either the same or worse.'));
+    found.appendChild(el('b', null, 'Slate chooses the minimum number of '
+      + 'groups that achieves a near-optimal division.'));
     (five.after || five).appendChild(found);
     say(five, 'So the question Slate answers is this: given a lineup, which '
       + 'items overlap more in taste compared to all the others in it. It is '

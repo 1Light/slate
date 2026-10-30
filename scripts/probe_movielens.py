@@ -1,18 +1,19 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import csv
 import json
 import re
 import sys
+import unicodedata
 from collections import defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import matrix as matrix_mod            # noqa: E402
-from app.qloo import Qloo                       # noqa: E402
-from app.resolve import Film, resolve_all       # noqa: E402
+from app import matrix as matrix_mod                        
+from app.qloo import Qloo                                   
+from app.resolve import Film, resolve_all                   
 
 ML = Path("data/ml-32m")
 MIN_RATERS = 30
@@ -20,16 +21,70 @@ MIN_PAIRS = 10
 
 
 def norm(title: str) -> str:
-    t = title.lower().strip()
-    t = re.sub(r"\s*\(\d{4}\)\s*$", "", t)
-    m = re.match(r"^(.*),\s*(the|a|an|la|le|les|el|il|der|die|das)$", t)
-    if m:
-        t = f"{m.group(2)} {m.group(1)}"
-    t = re.sub(r"[^a-z0-9]+", " ", t)
-    return re.sub(r"\s+", " ", t).strip()
+                                                                      
+    t = re.sub(r"\s*\(\d{4}\)\s*$", "", title).strip().casefold()
+                                                                 
+    article = re.fullmatch(r"(.+),\s*(the|a|an|la|le|les|el|il|der|die|das)", t)
+    if article:
+        t = f"{article.group(2)} {article.group(1)}"
+    t = unicodedata.normalize("NFKD", t)
+    t = "".join(c for c in t if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", " ", t).strip()
+
+
+def film_key(film):
+                                                                   
+    return norm(film.title), int(film.year or 0)
+
+
+def match_movies(want, movie_rows):
+                                                                           
+
+                                                                              
+                                                                                
+       
+    catalog = defaultdict(dict)
+    for row in movie_rows:
+        catalog[norm(row["title"])][int(row["movieId"])] = row
+
+    ids, titles, made, genres, audit = {}, {}, {}, {}, []
+    for key, entry in sorted(want.items()):
+        title_key, asked = key
+        candidates = []
+        for mid, row in sorted(catalog.get(title_key, {}).items()):
+            ym = re.search(r"\((\d{4})\)\s*$", row["title"])
+            year = int(ym.group(1)) if ym else 0
+            if asked and year == asked:
+                candidates.append((mid, row, year))
+        status = ("matched" if len(candidates) == 1 else
+                  "ambiguous" if candidates else "unmatched")
+        record = {
+            "requested_title": entry["film"].title,
+            "requested_year": asked,
+            "lineups": sorted(entry["lineups"]),
+            "status": status,
+            "candidates": [{"movie_id": mid, "title": row["title"], "year": year}
+                           for mid, row, year in candidates],
+            "accepted_movie_ids": [],
+        }
+        if status == "matched":
+            mid, row, year = candidates[0]
+            if mid in ids and ids[mid] != key:
+                raise ValueError(f"MovieLens ID {mid} matched two requested films")
+            ids[mid] = key
+            titles[key] = row["title"]
+            made[key] = year
+            genres[key] = {g for g in row.get("genres", "").split("|")
+                           if g and g != "(no genres listed)"}
+            record["accepted_movie_ids"] = [mid]
+        audit.append(record)
+    return ids, titles, made, genres, audit
+
 
 
 def spearman(xs, ys):
+    if len(xs) < 3:
+        return None
     def ranks(v):
         order = sorted(range(len(v)), key=lambda i: v[i])
         out = [0.0] * len(v)
@@ -64,8 +119,8 @@ def pearson(xs, ys):
 
 
 def main() -> int:
-    if not (ML / "ratings.csv").exists():
-        print(f"MovieLens not found at {ML}/ratings.csv")
+    if not all((ML / name).exists() for name in ("movies.csv", "ratings.csv")):
+        print(f"MovieLens requires movies.csv and ratings.csv in {ML}/")
         print("  curl -O https://files.grouplens.org/datasets/movielens/ml-32m.zip")
         print("  unzip ml-32m.zip -d data/")
         return 2
@@ -73,33 +128,32 @@ def main() -> int:
     slug = sys.argv[1] if len(sys.argv) > 1 else "one-genre"
     path = Path("data/lineups") / f"{slug}.json"
     data = json.loads(path.read_text(encoding="utf-8"))
-    wanted = {norm(f["title"]): f for f in data["films"]}
-    years = {norm(f["title"]): f.get("year", 0) for f in data["films"]}
+    films = [Film(title=f["title"], year=f.get("year", 0),
+                  director=f.get("director", ""), aliases=f.get("aliases", []))
+             for f in data["films"]]
+    wanted = {film_key(f): {"film": f, "lineups": {slug}} for f in films}
 
     print(f"{data.get('name', slug)}")
     print("=" * 64)
-    ids, titles, genres, made = {}, {}, {}, {}
-    with (ML / "movies.csv").open(encoding="utf-8") as fh:
-        for row in csv.DictReader(fh):
-            key = norm(row["title"])
-            if key not in wanted:
-                continue
-            ym = re.search(r"\((\d{4})\)\s*$", row["title"])
-            year = int(ym.group(1)) if ym else 0
-            want = years[key]
-            if want and year and abs(year - want) > 1:
-                continue
-            ids[int(row["movieId"])] = key
-            titles[key] = row["title"]
-            genres[key] = {g for g in row.get("genres", "").split("|") if g
-                           and g != "(no genres listed)"}
-            made[key] = year
+    with (ML / "movies.csv").open(encoding="utf-8", newline="") as fh:
+        ids, titles, made, genres, audit = match_movies(wanted, csv.DictReader(fh))
+    audit_path = Path("data") / f"movielens_matches_{slug}.json"
+    audit_path.write_text(json.dumps({
+        "policy": "unique normalised title plus exact year; no fuzzy fallback",
+        "matches": audit,
+    }, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"MovieLens match audit: {audit_path}")
+    for record in audit:
+        accepted = record["accepted_movie_ids"]
+        matched = record["candidates"][0]["title"] if accepted else record["status"]
+        print(f"   {record['requested_title']} ({record['requested_year']})"
+              f" -> {matched}; accepted IDs: {accepted}")
 
     found = sorted(titles)
     missing = [k for k in wanted if k not in titles]
     print(f"\n1. MATCHED  {len(found)}/{len(wanted)} films in MovieLens")
     for k in missing:
-        print(f"      not found: {wanted[k]['title']}")
+        print(f"      not found: {wanted[k]['film'].title} ({wanted[k]['film'].year})")
     if len(found) < 4:
         print("\nToo few matches. Nothing can be measured on this lineup.")
         return 1
@@ -117,7 +171,7 @@ def main() -> int:
                 kept += 1
     print(f"   {kept:,} ratings from {len(by_user):,} users touch this lineup")
 
-    human, qloo_d, labels, thin = {}, {}, [], 0
+    human, labels, thin = {}, [], 0
     keys = found
     for i, a in enumerate(keys):
         for b in keys[i + 1:]:
@@ -140,11 +194,9 @@ def main() -> int:
         return 1
 
     qloo = Qloo()
-    films = [Film(title=f["title"], year=f["year"], director=f.get("director", ""),
-                  aliases=f.get("aliases", [])) for f in data["films"]]
     resolved, _ = resolve_all(qloo, films, data.get("entity_type", "urn:entity:movie"))
     m = matrix_mod.build(qloo, resolved, data.get("entity_type", "urn:entity:movie"))
-    back = {norm(t): t for t in m.films}
+    back = {film_key(m.resolved[t].film): t for t in m.films}
 
     xs, ys = [], []
     for (a, b), (r, n) in human.items():
@@ -161,14 +213,17 @@ def main() -> int:
     rho = spearman(xs, ys)
     print(f"\n4. AGREEMENT")
     print(f"   Qloo distance vs MovieLens rating correlation, over {len(xs)} pairs")
+    if rho is None:
+        print("   No correlation: one of the pair-level series is constant.")
+        return 1
     print(f"   rho = {rho:+.3f}")
     print("   (negative is the hypothesis: closer in Qloo -> people agree more)")
 
-    print("\n5. BASELINES   what the same pairs predict from free metadata")
+    print("\n5. BASELINES   correlations on the same evaluated pairs")
     gj, yd, pd_, agree = [], [], [], []
     pops = {}
     for t in m.films:
-        pops[norm(t)] = m.popularity(t)
+        pops[film_key(m.resolved[t].film)] = m.popularity(t)
     for (a, b), (r, _n) in human.items():
         if a not in back or b not in back:
             continue
@@ -183,8 +238,8 @@ def main() -> int:
     tagged = [genres[k] for k in found if genres.get(k)]
     shared = set.intersection(*tagged) if len(tagged) == len(found) and tagged else set()
     if shared:
-        print(f"   every film here is tagged {' and '.join(sorted(shared))}, so a")
-        print("   genre label has almost nothing to separate them with")
+        print(f"   every matched film shares the {' and '.join(sorted(shared))} tag")
+        print("   the genre baseline still uses each film's complete genre set")
 
     rows = [
         ("Slate distance", rho, "cultural affinity"),
@@ -205,7 +260,7 @@ def main() -> int:
     scored = [(abs(r), name) for name, r, _ in rows if r is not None]
     best = max(scored)[1]
     beat = all(abs(rho) > abs(r) for _n2, r, _h in rows[1:] if r is not None)
-    print(f"\n   strongest predictor: {best}")
+    print(f"\n   largest absolute correlation in this sample: {best}")
 
     labels.sort(key=lambda r: r[2])
     print("\n   closest by Qloo:")
@@ -215,32 +270,52 @@ def main() -> int:
     for a, b, d, r, n in labels[-4:]:
         print(f"      d={d:5.2f}  r={r:+.2f}  n={n:>5}  {a[:28]} / {b[:28]}")
 
+                                                                        
+                                                                          
+    report = {
+        "lineup": slug, "lineup_name": data.get("name", slug),
+        "rho": rho, "pairs": len(xs), "ratings": kept, "users": len(by_user),
+        "matched": len(found), "of": len(wanted),
+        "unmatched": [wanted[k]["film"].title for k in missing],
+        "match_policy": "unique normalised title plus exact year",
+        "match_audit": str(audit_path),
+        "min_co_raters": MIN_RATERS,
+        "baselines": [{"name": name, "rho": r, "measure": how}
+                      for name, r, how in rows],
+        "agreement_pairs": [
+            {"a": a, "b": b, "distance": d, "agreement": r, "n": n}
+            for a, b, d, r, n in labels],
+        "limit": "Exploratory pairwise rating-correlation check on one lineup; "
+                 "not a test of attendance or audience-guided selection.",
+    }
+    out = Path("data") / f"movielens_agreement_{slug}.json"
+    out.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"\nwrote {out}")
+    vpath = Path("data/validation.json")
+    if slug == "one-genre" and vpath.exists():
+        v = json.loads(vpath.read_text(encoding="utf-8"))
+        mv = v.setdefault("movielens", {})
+        mv.update(report)
+                                                                            
+        mv.pop("headline", None)
+        mv.pop("baseline_verdict", None)
+        mv["reproduce"] = "python3 scripts/probe_movielens.py"
+        mv["baseline_reproduce"] = mv["reproduce"]
+        vpath.write_text(json.dumps(v, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"updated rating-agreement fields in {vpath}; overlap and groups preserved")
+
     print("\n" + "=" * 64)
-    if rho is None:
-        print("No result.")
-        return 1
-    if rho <= -0.3 and beat:
-        print("CORROBORATED, AND IT BEATS THE METADATA. Films Qloo places close")
-        print("together are rated more alike by the people who saw both, in a")
-        print("dataset Qloo had no part in — and genre, year and fame all predict")
-        print("that agreement worse. Independent support for the taste signal,")
-        print("not evidence about festival attendance, which nothing public")
-        print("can show.")
-        return 0
-    if rho <= -0.3:
-        print("CORROBORATED, BUT A BASELINE MATCHES IT. The signal tracks real")
-        print(f"rating behaviour, yet {best} predicts the same agreement at least")
-        print("as well. Say so plainly: the claim is that Qloo adds something a")
-        print("genre tag cannot, and on this lineup that is not demonstrated.")
-        return 0
-    if rho <= -0.1:
-        print("WEAK AGREEMENT. The sign is right but the effect is small. Report")
-        print("the number rather than the conclusion.")
-        return 0
-    print("NOT CORROBORATED. Qloo's distances do not track how these people")
-    print("rated. Either the sample is too thin or the signal does not survive")
-    print("contact with rating behaviour. Do not put this on the page.")
-    return 1
+    print("This compares Qloo distance with Pearson rating correlations among")
+    print("co-raters, using Spearman correlation across film pairs.")
+    print("Negative rho means closer pairs tend to have more correlated ratings.")
+    if beat:
+        print("Slate has the largest absolute correlation among these baselines")
+        print("on this sample; this is not a significance test of their differences.")
+    else:
+        print(f"At least one baseline matches or exceeds Slate: {best}.")
+    print("Treat this as an exploratory result on this lineup, not a general")
+    print("finding or an attendance forecast. Report unfavourable results too.")
+    return 0
 
 
 if __name__ == "__main__":

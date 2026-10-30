@@ -1,0 +1,213 @@
+{
+  "policy": "unique normalised title plus exact year; no fuzzy fallback",
+  "matches": [
+    {
+      "requested_title": "2001: A Space Odyssey",
+      "requested_year": 1968,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 924,
+          "title": "2001: A Space Odyssey (1968)",
+          "year": 1968
+        }
+      ],
+      "accepted_movie_ids": [
+        924
+      ]
+    },
+    {
+      "requested_title": "Annihilation",
+      "requested_year": 2018,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 182715,
+          "title": "Annihilation (2018)",
+          "year": 2018
+        }
+      ],
+      "accepted_movie_ids": [
+        182715
+      ]
+    },
+    {
+      "requested_title": "Arrival",
+      "requested_year": 2016,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 164179,
+          "title": "Arrival (2016)",
+          "year": 2016
+        }
+      ],
+      "accepted_movie_ids": [
+        164179
+      ]
+    },
+    {
+      "requested_title": "Blade Runner 2049",
+      "requested_year": 2017,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 176371,
+          "title": "Blade Runner 2049 (2017)",
+          "year": 2017
+        }
+      ],
+      "accepted_movie_ids": [
+        176371
+      ]
+    },
+    {
+      "requested_title": "High Life",
+      "requested_year": 2018,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 193697,
+          "title": "High Life (2018)",
+          "year": 2018
+        }
+      ],
+      "accepted_movie_ids": [
+        193697
+      ]
+    },
+    {
+      "requested_title": "Melancholia",
+      "requested_year": 2011,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 86320,
+          "title": "Melancholia (2011)",
+          "year": 2011
+        }
+      ],
+      "accepted_movie_ids": [
+        86320
+      ]
+    },
+    {
+      "requested_title": "Primer",
+      "requested_year": 2004,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 8914,
+          "title": "Primer (2004)",
+          "year": 2004
+        }
+      ],
+      "accepted_movie_ids": [
+        8914
+      ]
+    },
+    {
+      "requested_title": "Solaris",
+      "requested_year": 1972,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "unmatched",
+      "candidates": [],
+      "accepted_movie_ids": []
+    },
+    {
+      "requested_title": "Stalker",
+      "requested_year": 1979,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 1232,
+          "title": "Stalker (1979)",
+          "year": 1979
+        }
+      ],
+      "accepted_movie_ids": [
+        1232
+      ]
+    },
+    {
+      "requested_title": "The Fountain",
+      "requested_year": 2006,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 48043,
+          "title": "Fountain, The (2006)",
+          "year": 2006
+        }
+      ],
+      "accepted_movie_ids": [
+        48043
+      ]
+    },
+    {
+      "requested_title": "Under the Skin",
+      "requested_year": 2013,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 109848,
+          "title": "Under the Skin (2013)",
+          "year": 2013
+        }
+      ],
+      "accepted_movie_ids": [
+        109848
+      ]
+    },
+    {
+      "requested_title": "Upstream Color",
+      "requested_year": 2013,
+      "lineups": [
+        "one-genre"
+      ],
+      "status": "matched",
+      "candidates": [
+        {
+          "movie_id": 99917,
+          "title": "Upstream Color (2013)",
+          "year": 2013
+        }
+      ],
+      "accepted_movie_ids": [
+        99917
+      ]
+    }
+  ]
+}

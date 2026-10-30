@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 from __future__ import annotations
 
 import json
@@ -7,10 +7,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import matrix as matrix_mod          # noqa: E402
-from app.qloo import Qloo                      # noqa: E402
-from app.resolve import Film, resolve_all      # noqa: E402
-from app.structure import analyse              # noqa: E402
+from app import matrix as matrix_mod                      
+from app.qloo import Qloo                                  
+from app.resolve import Film, resolve_all                  
+from app.structure import analyse                          
 
 RULE = "=" * 70
 
