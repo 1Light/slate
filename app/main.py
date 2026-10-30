@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from .build import (ENTITY_VIEW, LINEUPS, MIN_FILMS, ROOT, VIEW_ORDER,
+                    MixedTypes,
                     Refused, _compare_row, _films_from_lines, _lineup_ari,
                     ENTITY_LABEL, ENTITY_NOUN, _against_chance,
                     _best_subset_fast, _bridge_check, _choose_best,
@@ -119,12 +120,26 @@ def analyse_custom(req: SlateRequest, request: Request):
     films = _films_from_lines(req.films)
     if len(films) < MIN_FILMS:
         raise HTTPException(422, f"Add at least {MIN_FILMS} titles.")
+    if len(films) > MAX_FILMS:
+        raise HTTPException(422, f"{MAX_FILMS} titles at most.")
 
     known = req.entity_type in ENTITY_LABEL
     start = req.entity_type if known else "urn:entity:movie"
     try:
         _, _, _, _, shape = _pipeline(req.name, "", films, start,
                                       "preset" if known else "custom")
+    except MixedTypes as mix:
+        return JSONResponse(status_code=409, content={
+            "mixed": True,
+            "kinds": [{
+                "entity_type": kind,
+                "label": ENTITY_LABEL.get(kind, "titles"),
+                "titles": titles,
+                "enough": len(titles) >= MIN_FILMS,
+            } for kind, titles in mix.found.items()],
+            "missing": mix.missing,
+            "least": MIN_FILMS,
+        })
     except QlooError as exc:
         raise HTTPException(503, str(exc)) from exc
     return shape
@@ -159,9 +174,11 @@ def panel(req: PanelRequest, request: Request):
     known = {f.title.lower() for f in films}
     extra = [f for f in extra if f.title.lower() not in known]
 
+    lost: list[str] = []
     try:
         _, _, m, _, base = _pipeline(name, note, films + extra, entity_type,
                                      "preset")
+        lost = list(base.get("unresolved") or [])
     except QlooError as exc:
         raise HTTPException(503, str(exc)) from exc
 
@@ -197,7 +214,7 @@ def panel(req: PanelRequest, request: Request):
 
         agent = to_dict(result)
         if not result.swaps:
-            shape, _a = _shape_from(name, note, small, "panel", [], entity_type)
+            shape, _a = _shape_from(name, note, small, "panel", lost, entity_type)
             shape["diff"] = _diff(base, shape)
             shape["added"] = []
             gone = sorted(set(m.films) - set(small.films))
@@ -223,7 +240,7 @@ def panel(req: PanelRequest, request: Request):
         shape["agent"] = agent
         return shape
 
-    shape, _a = _shape_from(name, note, small, "panel", [], entity_type)
+    shape, _a = _shape_from(name, note, small, "panel", lost, entity_type)
     shape["diff"] = _diff(base, shape)
     shape["added"] = [f.title for f in extra if f.title in small.films]
     gone = sorted(set(m.films) - set(small.films))
@@ -262,6 +279,7 @@ class SpaceEdit(BaseModel):
     name: str | None = None
     titles: list[str] | None = None
     slots: int | None = None
+    placed: int | None = None
 
 
 class SpaceVersion(BaseModel):
@@ -308,12 +326,26 @@ def space_new(req: SpaceNew, request: Request):
     titles = [t.strip() for t in req.titles if t.strip()]
     if len(titles) < MIN_FILMS:
         raise HTTPException(422, f"Give at least {MIN_FILMS} titles.")
+    if len(titles) > MAX_FILMS:
+        raise HTTPException(422, f"{MAX_FILMS} titles at most.")
 
     kind = req.entity_type if req.entity_type in ENTITY_LABEL else None
     if kind is None:
         films = _films_from_lines(titles)
         try:
             kind = _read_as(Qloo(), films, "urn:entity:movie")[0]
+        except MixedTypes as mix:
+            return JSONResponse(status_code=409, content={
+                "mixed": True,
+                "kinds": [{
+                    "entity_type": k,
+                    "label": ENTITY_LABEL.get(k, "titles"),
+                    "titles": got,
+                    "enough": len(got) >= MIN_FILMS,
+                } for k, got in mix.found.items()],
+                "missing": mix.missing,
+                "least": MIN_FILMS,
+            })
         except QlooError as exc:
             raise HTTPException(503, str(exc)) from exc
     name = (req.name or titles[0])[:120]
@@ -324,7 +356,8 @@ def space_new(req: SpaceNew, request: Request):
 def space_edit(wid: str, req: SpaceEdit, request: Request):
     fields = {k: v for k, v in
               (("name", req.name), ("titles", req.titles),
-               ("slots", req.slots)) if v is not None}
+               ("slots", req.slots), ("placed", req.placed))
+              if v is not None}
     got = store.update(_owner(req.owner), wid, **fields)
     if got is None:
         raise HTTPException(404, "No such workspace.")
@@ -362,15 +395,22 @@ def brief(req: BriefRequest, request: Request):
     else:
         raise HTTPException(422, "Give a lineup or a list of titles.")
 
-    extra = _films_from_lines([req.candidate] + list(req.pool))
     known = {f.title.lower() for f in films}
+    if req.candidate.strip().lower() in known:
+        here = next(f.title for f in films
+                    if f.title.lower() == req.candidate.strip().lower())
+        raise Refused(409, f"{here} is already in this lineup.")
+
+    extra = _films_from_lines([req.candidate] + list(req.pool))
     extra = [f for f in extra if f.title.lower() not in known]
 
     try:
-        _, _, m, _, _ = _pipeline(name, note, films + extra, entity_type,
-                                  "preset")
+        _, _, m, _, shape = _pipeline(name, note, films + extra, entity_type,
+                                      "preset")
     except QlooError as exc:
         raise HTTPException(503, str(exc)) from exc
+
+    dropped = list(shape.get("excluded") or [])
 
     def placed(title):
         hit = [t for t in m.films if t.lower() == title.lower()]
@@ -378,9 +418,13 @@ def brief(req: BriefRequest, request: Request):
 
     want = placed(req.candidate)
     if want is None:
-        raise HTTPException(422,
-                            f"{req.candidate} could not be placed against "
-                            "this lineup.")
+        kind = ENTITY_LABEL.get(entity_type, "titles")
+        if any(t.lower() == req.candidate.lower() for t in (dropped or [])):
+            raise Refused(422, f"Qloo has {req.candidate} but no data "
+                               "linking it to this lineup, so it cannot be "
+                               "compared.")
+        raise Refused(404, f"Slate could not find {_tidy(req.candidate)} "
+                           f"among {kind}." + _year_hint(entity_type))
 
     lineup = [t for t in m.films if t.lower() in known]
     if len(lineup) < 2:
@@ -441,33 +485,52 @@ def choose(req: ChooseRequest, request: Request):
             else "urn:entity:movie")
     base = _films_from_lines(req.lineup)
     known = {f.title.lower() for f in base}
-    extra = [f for f in _films_from_lines(req.candidates)
-             if f.title.lower() not in known]
+    asked = _films_from_lines(req.candidates)
+    here = [_tidy(f.title) for f in asked if f.title.lower() in known]
+    extra = [f for f in asked if f.title.lower() not in known]
+    slots = max(1, req.slots)
+
     if not extra:
-        raise HTTPException(422, "Give some titles to choose between.")
+        raise Refused(409, _nameList(here) + (" are" if len(here) > 1
+                                              else " is")
+                      + " already in this lineup. Give titles that are not "
+                        "in it yet.")
 
     try:
-        _, _, m, _, _ = _pipeline("Your lineup", "", base + extra, kind,
-                                  "preset")
+        _, _, m, _, shape = _pipeline("Your lineup", "", base + extra, kind,
+                                      "preset")
     except QlooError as exc:
         raise HTTPException(503, str(exc)) from exc
 
     lineup = [t for t in m.films if t.lower() in known]
     pool = [t for t in m.films if t not in set(lineup)]
+    dropped = list(shape.get("excluded") or [])
+    thin = [f.title for f in extra
+            if any(t.lower() == f.title.lower() for t in dropped)]
     missed = [f.title for f in extra
-              if not any(t.lower() == f.title.lower() for t in m.films)]
+              if not any(t.lower() == f.title.lower() for t in m.films)
+              and f.title not in thin]
+
     if len(lineup) < 2:
         raise HTTPException(422, "The lineup needs at least two titles.")
-    if not pool:
-        raise HTTPException(422, "None of those titles could be placed "
-                                 "against this lineup.")
 
-    got = _choose_best(m, lineup, pool, max(1, req.slots))
+    notes = _candidate_notes(here, missed, thin,
+                             ENTITY_LABEL.get(kind, "titles"), kind)
+    if len(pool) < slots + 1:
+        left = len(pool)
+        leaves = (f"That leaves {spell_count(left)} "
+                  f"{'title' if left == 1 else 'titles'}. " if notes else "")
+        raise Refused(422, " ".join(notes + [
+            leaves + f"Room for {slots} requires at least "
+            f"{spell_count(slots + 1)} titles to compare."]))
+
+    got = _choose_best(m, lineup, pool, slots)
     if got is None:
         raise HTTPException(422, "Nothing to choose between.")
 
     full = lineup + got["best"]["films"]
     small = _subset(m, full)
+    got["notes"] = notes
     got["unplaced"] = missed
     got["noun"], got["nouns"] = ENTITY_NOUN.get(kind, ("item", "items"))
     got["shape"] = _shape_from("Your lineup", "", small, "choose", [], kind,
@@ -586,6 +649,49 @@ def views():
             })
             break
     return JSONResponse(out)
+
+
+SPELT = ["zero", "one", "two", "three", "four", "five", "six", "seven",
+         "eight", "nine", "ten"]
+
+
+def spell_count(n: int) -> str:
+    return SPELT[n] if 0 <= n < len(SPELT) else str(n)
+
+
+def _tidy(title: str) -> str:
+    return title.strip().rstrip(".,;:").strip() or title.strip()
+
+
+def _year_hint(entity_type: str) -> str:
+    if entity_type in ("urn:entity:movie", "urn:entity:tv_show"):
+        return " Check the spelling, or add a year in brackets, like " \
+               "Monster (2023)."
+    return " Check the spelling, or try another title."
+
+
+def _nameList(items: list[str]) -> str:
+    if len(items) == 1:
+        return items[0]
+    if len(items) == 2:
+        return f"{items[0]} and {items[1]}"
+    return ", ".join(items[:-1]) + f" and {items[-1]}"
+
+
+def _candidate_notes(here: list[str], missed: list[str], thin: list[str],
+                     kind: str, entity_type: str = "") -> list[str]:
+    said = []
+    if here:
+        said.append(_nameList(here) + (" are" if len(here) > 1 else " is")
+                    + " already in this lineup.")
+    if missed:
+        said.append(f"Slate could not find {_nameList(missed)} among "
+                    f"{kind}." + _year_hint(entity_type))
+    if thin:
+        said.append(f"Qloo has {_nameList(thin)} but no data linking "
+                    + ("them" if len(thin) > 1 else "it")
+                    + " to this lineup.")
+    return said
 
 
 @app.get("/api/validation")

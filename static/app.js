@@ -118,10 +118,11 @@ function cardStage(host, plan) {
     host.textContent = '';
 
     const { groups, card, step, loop, extra } = plan;
-    const lanes = groups.length + (extra ? 1 : 0);
+    const lanes = groups.length + (extra === 'span' ? 1 : 0);
     const gap = card.w * 0.55;
     const wide = lanes * card.w + (lanes - 1) * gap;
-    const left = Math.max(card.w * 0.3, (room - wide) / 2);
+    const lean = extra === 'apart' ? card.w * 0.8 : 0;
+    const left = Math.max(card.w * 0.3, (room - wide - lean) / 2);
     const laneAt = (i) => left + i * (card.w + gap);
 
     const label = plan.notes ? 38 : 26;
@@ -160,9 +161,12 @@ function cardStage(host, plan) {
         z: 40, turn: 90, role: 'span',
       });
     } else if (extra === 'apart') {
+      const last = groups.length - 1;
+      const deep = (groups[last] - 1) * step;
       spots.push({
-        x: laneAt(groups.length), y: top + card.h * 0.75, z: 40,
-        turn: -9, role: 'apart',
+        x: laneAt(last) + card.w * 0.62,
+        y: top + deep + card.h * 0.56,
+        z: 40, turn: -20, role: 'apart',
       });
     }
 
@@ -412,11 +416,12 @@ function board(d, ui) {
     spendBand();
     if (ui.sizes) {
       ui.sizes.textContent = '';
-      d.clusters.forEach((c) => {
-        const n = keep(c).length;
-        if (!n) return;
+      const counts = d.clusters.map((c) => keep(c).length).filter(Boolean);
+      const most = Math.max(1, ...counts);
+      counts.forEach((n) => {
         const bar = el('span');
         bar.style.flex = String(n);
+        bar.style.opacity = String(0.4 + 0.6 * (n / most));
         ui.sizes.appendChild(bar);
       });
     }
@@ -521,9 +526,9 @@ function legendText(d, node) {
   };
 
   if (d.weak) {
-    line(`These ${d.films.length} ${d.nouns || 'items'} are too alike to `
-      + 'separate. Slate found no grouping where the lines between groups '
-      + 'meant anything.');
+    line('No clear separation under this analysis. Slate found no grouping '
+      + `of these ${d.films.length} ${d.nouns || 'items'} where the lines `
+      + 'between groups scored well enough to show.');
     return;
   }
 

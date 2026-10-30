@@ -1,0 +1,24 @@
+{
+  "name": "Science fiction available to programme",
+  "note": "The candidate pool for the audience demo. None of these are named by the audience in taste_survey.csv or audience_preferences.csv, so every selection is an inference from affinity rather than an echo of the input. All sixteen resolve in Qloo.",
+  "entity_type": "urn:entity:movie",
+  "slots": 8,
+  "films": [
+    {"title": "Ex Machina", "year": 2014},
+    {"title": "Moon", "year": 2009},
+    {"title": "Primer", "year": 2004},
+    {"title": "Upstream Color", "year": 2013},
+    {"title": "Solaris", "year": 1972},
+    {"title": "Stalker", "year": 1979},
+    {"title": "The Fountain", "year": 2006},
+    {"title": "Melancholia", "year": 2011},
+    {"title": "High Life", "year": 2018},
+    {"title": "Aniara", "year": 2018},
+    {"title": "Coherence", "year": 2013},
+    {"title": "The Vast of Night", "year": 2019},
+    {"title": "Gattaca", "year": 1997},
+    {"title": "Children of Men", "year": 2006},
+    {"title": "Her", "year": 2013},
+    {"title": "Eternal Sunshine of the Spotless Mind", "year": 2004}
+  ]
+}

@@ -127,19 +127,39 @@ VIEW_ORDER = ["urn:entity:artist", "urn:entity:book",
 OTHER_TYPES = ("urn:entity:artist", "urn:entity:book",
                "urn:entity:tv_show", "urn:entity:podcast")
 
+class MixedTypes(Exception):
+
+    def __init__(self, found: dict, missing: list):
+        super().__init__("mixed")
+        self.found = found
+        self.missing = missing
+
+
 def _read_as(qloo, films, entity_type):
-    best = (entity_type, *resolve_all(qloo, films, entity_type))
-    if len(best[1]) == len(films):
-        return best
-    for other in OTHER_TYPES:
-        if other == entity_type:
-            continue
-        got = resolve_all(qloo, films, other)
-        if len(got[0]) > len(best[1]):
-            best = (other, *got)
-        if len(best[1]) == len(films):
-            break
-    return best
+    tried = {}
+    order = [entity_type] + [t for t in OTHER_TYPES if t != entity_type]
+    for kind in order:
+        resolved, failed = resolve_all(qloo, films, kind)
+        tried[kind] = (resolved, failed)
+        if len(resolved) == len(films):
+            return (kind, resolved, failed)
+
+    claimed, by_kind = {}, {}
+    for kind in order:
+        got = tried[kind][0]
+        for title in got:
+            if title not in claimed:
+                claimed[title] = kind
+                by_kind.setdefault(kind, []).append(
+                    {"title": title, "year": getattr(got[title],
+                                                     "qloo_year", None)})
+
+    if len(by_kind) > 1:
+        missing = [f.title for f in films if f.title not in claimed]
+        raise MixedTypes(by_kind, missing)
+
+    best = max(tried.items(), key=lambda kv: len(kv[1][0]))
+    return (best[0], *best[1])
 
 def _pipeline(name, note, films, entity_type, source):
     qloo = Qloo()

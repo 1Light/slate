@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import annotations
 
 import sys
@@ -26,8 +26,6 @@ def main() -> int:
     ids = {t: resolved[t].entity_id for t in titles}
     print(f"{name}: {len(titles)} titles\n")
 
-    # Every round must be a real call, so point the cache somewhere
-    # throwaway rather than switching it off, which the path builder needs.
     import tempfile
     scratch = Path(tempfile.mkdtemp(prefix="slate-censor-"))
     qloo.cache_dir = scratch
@@ -39,7 +37,6 @@ def main() -> int:
 
         seen = []
         for round_no in range(ROUNDS):
-            # A fresh directory per round, or round two reads round one.
             qloo.cache_dir = scratch / str(round_no)
             qloo.cache_dir.mkdir(parents=True, exist_ok=True)
             rows = qloo.rank_within(ids[anchor], [ids[t] for t in others],

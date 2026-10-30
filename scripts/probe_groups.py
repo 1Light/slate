@@ -20,7 +20,7 @@ from app.resolve import resolve_all             # noqa: E402
 from app.structure import analyse               # noqa: E402
 
 ML = Path("data/ml-32m")
-LINEUPS = ["one-genre", "bridge-probe", "berlinale2024", "cannes2023",
+LINEUPS = ["one-genre", "_probe-bridge", "berlinale2024", "cannes2023",
            "sundance2024"]
 MIN_RATERS = 30
 SHUFFLES = 10_000
@@ -102,8 +102,6 @@ def main() -> int:
     print("\nasking Qloo and grouping each lineup")
     qloo = Qloo()
     per_lineup = []
-    # Each lineup keeps its own titles, its pairwise values and its group
-    # sizes, so a permutation can reassign titles inside one lineup.
     worlds = []
 
     for slug in LINEUPS:
@@ -181,9 +179,6 @@ def main() -> int:
             print(f"      {nm[:24]:<26} {cov:>2} titles, {k} groups   "
                   f"same {a_in:.3f}   different {a_out:.3f}{mark}")
 
-    # Reassign titles to groups and measure the gap again. Both measures run
-    # under the same permutations, because phi was chosen after seeing what
-    # Jaccard did and the p-value cannot account for that.
     rng = random.Random(20260125)
     better = {"values": 0, "jaccard": 0}
     for _ in range(SHUFFLES):
@@ -203,8 +198,6 @@ def main() -> int:
             if gap_from(drawn, field) >= true_gap[field]:
                 better[field] += 1
 
-    # Plus one: 10,000 sampled permutations cannot show a tail probability
-    # of zero.
     p = {f: (better[f] + 1) / (SHUFFLES + 1) for f in better}
 
     for field, label in (("values", "phi, the reported measure"),

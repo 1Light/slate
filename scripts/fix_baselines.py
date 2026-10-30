@@ -1,16 +1,4 @@
 #!/usr/bin/env python3
-"""Put the agreement baselines back into validation.json.
-
-An earlier version of probe_overlap.py wrote baselines measured against
-audience overlap into the key the page reads for its metadata test. That
-test compares against rating agreement. Against overlap, release year
-scores -0.594 against Slate's -0.650, because people watch in eras, so the
-table appeared to show metadata nearly matching Qloo.
-
-These are the figures probe_movielens.py prints.
-
-    python3 scripts/fix_baselines.py
-"""
 import json
 from pathlib import Path
 

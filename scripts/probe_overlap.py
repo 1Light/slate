@@ -162,10 +162,6 @@ def main() -> int:
         pd_.append(abs(pa - pb) if pa is not None and pb is not None else 0.0)
         target.append(r["phi"])
 
-    # Printed for interest only. They are NOT written to validation.json:
-    # the page's metadata test compares against rating agreement, and
-    # against overlap release year scores -0.594 because people watch in
-    # eras, which has nothing to do with taste.
     baselines = [
         ("Slate distance", spearman(ds, target)),
         ("Shared genres", spearman(gj, target)),

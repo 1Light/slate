@@ -1,15 +1,19 @@
-data/cache/
-*.cache.json
-
+# Secrets
 .env
 .env.*
 !.env.example
 
-!.github/**/*.md
+# Qloo responses, cached at runtime
+data/cache/
 
+# MovieLens, downloaded for the evidence scripts
 data/ml-32m/
 ml-32m.zip
 
+# The local database, when running without Postgres
+data/slate.db
+
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -18,6 +22,7 @@ __pycache__/
 venv/
 env/
 
+# Editors and systems
 .DS_Store
 .vscode/
 .idea/

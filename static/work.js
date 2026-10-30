@@ -39,11 +39,15 @@ async function ask(url, opts) {
   const res = await fetch(url, opts);
   if (!res.ok) {
     let why = `${res.status}`;
+    let body = null;
     try {
-      const body = await res.json();
+      body = await res.json();
       why = body.detail || body.error || why;
     } catch {  }
-    throw new Error(why);
+    const err = new Error(why);
+    err.status = res.status;
+    err.body = body;
+    throw err;
   }
   return res.json();
 }
@@ -98,6 +102,49 @@ const SAMPLE_TITLES = ['Monster', 'Anatomy of a Fall', 'Past Lives',
   'Fallen Leaves', 'Club Zero', 'Youth', 'The Zone of Interest',
   'Perfect Days'];
 
+function mixedPanel(info, titles, onPick) {
+  const fig = el('div', 'taste');
+  fig.appendChild(el('p', 'mixed-lede',
+    `These titles span ${spellSmall(info.kinds.length)} kinds.`));
+  fig.appendChild(el('p', 'mixed-why',
+    'Slate creates one workspace per kind of title, so picking one leaves '
+    + 'the others out.'));
+
+  const cols = el('div', 'mixed-cols');
+  const blocks = info.kinds.slice();
+  if ((info.missing || []).length) {
+    blocks.push({ label: 'Not recognised', titles: info.missing,
+                  enough: false, lost: true });
+  }
+  blocks.forEach((kind) => {
+    const col = el('div');
+    col.appendChild(el('p', 'mixed-head', kind.lost
+      ? `${kind.label} \u00b7 ${kind.titles.length}`
+      : `Matched as ${kind.label} \u00b7 ${kind.titles.length}`));
+    kind.titles.forEach((t) => {
+      const row = el('p', 'taste-film');
+      row.appendChild(document.createTextNode(t.title || t));
+      if (t.year) row.appendChild(el('span', 'year', String(t.year)));
+      col.appendChild(row);
+    });
+    if (kind.enough) {
+      const go = el('button', 'mixed-use', `Use these ${kind.titles.length}`);
+      go.type = 'button';
+      go.onclick = () => onPick(kind);
+      col.appendChild(go);
+    } else if (!kind.lost) {
+      col.appendChild(el('p', 'mixed-short', `Needs ${info.least}.`));
+    }
+    cols.appendChild(col);
+  });
+  fig.appendChild(cols);
+  return fig;
+}
+
+const SMALL = ['no', 'one', 'two', 'three', 'four', 'five', 'six'];
+const spellSmall = (n) => SMALL[n] || String(n);
+const Caps = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+
 function sampleFigure() {
   const fig = el('div', 'taste');
   const bar = el('div', 'taste-bar');
@@ -150,11 +197,19 @@ function draw() {
   end.textContent = '';
   stage.textContent = '';
 
+  const bar = document.querySelector('.deskbar');
+  if (bar) {
+    bar.hidden = false;
+    bar.classList.add('bare');
+  }
+
   const top = el('div', 'door');
   top.appendChild(el('h1', 'door-title', 'Start with a lineup.'));
   top.appendChild(el('p', 'door-lede',
     'Four to twenty-four titles, one per line. Films, music, books, '
-    + 'podcasts or TV shows.'));
+    + 'podcasts or TV shows. In case a name exists in more than one type, '
+    + 'adding a year in brackets, like Monster (2023), helps Slate find the '
+    + 'one you mean.'));
 
   const pair = el('div', 'door-pair');
 
@@ -187,26 +242,51 @@ function draw() {
 
   make.onclick = async () => {
     const titles = area.value.split('\n').map((t) => t.trim()).filter(Boolean);
+    const refuse = (why) => {
+      said.classList.add('refused');
+      said.textContent = why;
+    };
+    said.classList.remove('refused');
     if (titles.length < 4) {
-      said.textContent = 'Four titles at least, so there is something to '
-        + 'separate.';
+      refuse('Four titles at least, so there is something to separate.');
       return;
     }
-    make.disabled = true;
+    if (titles.length > 24) {
+      refuse('Twenty-four titles at most.');
+      return;
+    }
+    make.classList.add('busy');
     make.textContent = 'Working it out';
-    said.textContent = '';
+    said.textContent = `Asking Qloo about ${titles.length} titles.`;
     try {
       const made = await ask('/api/spaces', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ owner: owner(), titles }),
+        body: JSON.stringify({
+          owner: owner(), titles,
+          entity_type: area.dataset.entityType || undefined,
+        }),
       });
       window.location.href = `/app#${made.id}`;
       window.location.reload();
     } catch (e) {
-      said.textContent = e.message || 'That did not work.';
+      const mix = e && e.body && e.body.mixed ? e.body : null;
+      if (mix) {
+        said.textContent = '';
+        right.textContent = '';
+        right.appendChild(mixedPanel(mix, titles, (kind) => {
+          area.value = kind.titles
+            .map((t) => (t.title || t)).join('\n');
+          area.dataset.entityType = kind.entity_type;
+          make.onclick();
+        }));
+        right.appendChild(el('p', 'door-caption',
+          'What Slate found in your list'));
+      } else {
+        refuse(e.message || 'That did not work.');
+      }
     } finally {
-      make.disabled = false;
+      make.classList.remove('busy');
       make.textContent = 'Analyse this lineup';
     }
   };
@@ -257,7 +337,8 @@ function spaceRow(w) {
   open.appendChild(bar);
 
   open.appendChild(el('p', 'door-card-name', w.name));
-  const n = w.titles.length;
+  const n = (typeof w.placed === 'number' && w.placed > 0)
+    ? w.placed : w.titles.length;
   open.appendChild(el('p', 'door-card-what',
     `${n} ${nounFor(w.entity_type, n)}`
     + (w.groups ? ` \u00b7 ${w.groups} groups` : '')));
@@ -299,7 +380,7 @@ function spaceRow(w) {
   bin.onclick = async (ev) => {
     ev.stopPropagation();
     menu.hidden = true;
-    if (!window.confirm(`Delete ${w.name}? Its versions go too.`)) return;
+    if (!await confirmDelete(w.name)) return;
     await ask(`/api/spaces/${w.id}?owner=${owner()}`, { method: 'DELETE' });
     load();
   };
@@ -353,6 +434,21 @@ function fold(shown, total, draw) {
   return total > shown ? btn : null;
 }
 
+function noted(out, err, fallback) {
+  const code = err && err.status;
+  if (code === 404 || code === 409 || code === 422) {
+    out.textContent = '';
+    out.appendChild(el('p', 'work-note', (err && err.message) || ''));
+    if (shown) {
+      out.appendChild(el('p', 'out-when', 'The lineup as it stands'));
+      out.appendChild(drawn(shown));
+    }
+    return true;
+  }
+  fallback();
+  return false;
+}
+
 function said(text) {
   if (said.show) said.show(text);
 }
@@ -360,6 +456,11 @@ function said(text) {
 const inGroup = (g) => (Array.isArray(g) ? g : (g && g.films) || []);
 
 async function openSpace(id) {
+  const bar = document.querySelector('.deskbar');
+  if (bar) {
+    bar.hidden = false;
+    bar.classList.remove('bare');
+  }
   try {
     space = await ask(`/api/spaces/${id}?owner=${owner()}`);
   } catch {
@@ -661,7 +762,7 @@ function drawChips() {
 }
 
 function drawCounts() {
-  const n = lineup().length;
+  const n = shown ? shown.films.length : lineup().length;
   const noun = nounFor(space.entity_type, n);
   const groups = shown ? `${shown.clusters.length} groups` : '';
   const over = n - space.slots;
@@ -670,9 +771,13 @@ function drawCounts() {
     : over < 0 ? `${slot(-over)} free` : '';
   const counts = document.querySelector('.deskbar-counts');
   if (!counts) return;
-  counts.textContent = [`${n} ${noun}`, groups, gap].filter(Boolean)
-    .join(' \u00b7 ');
-  counts.classList.toggle('over', over > 0);
+  counts.textContent = '';
+  const plain = [`${n} ${noun}`, groups].filter(Boolean).join(' \u00b7 ');
+  counts.appendChild(document.createTextNode(plain));
+  if (gap) {
+    counts.appendChild(document.createTextNode(' \u00b7 '));
+    counts.appendChild(el('span', over > 0 ? 'over' : null, gap));
+  }
 
   const back = document.querySelector('.deskbar-end .ghost');
   if (back && started) {
@@ -712,10 +817,26 @@ async function runSpace(opts) {
     paintSpace(d, before);
     drawChips();
     drawCounts();
-    if ((d.unresolved || []).length) {
-      status.textContent = `Qloo could not place `
-        + `${nameList(d.unresolved)}.`;
-      return;
+    const gone = (d.unresolved || []).concat(d.excluded || []);
+    if (space) {
+      const fields = {};
+      if (gone.length && space.slots === lineup().length) {
+        fields.slots = d.films.length;
+      }
+      if (space.placed !== d.films.length) fields.placed = d.films.length;
+      if (Object.keys(fields).length) {
+        save(fields).then(() => {
+          drawCounts();
+          if (slotField) slotField.value = String(space.slots);
+        });
+      }
+    }
+    if (gone.length) {
+      const note = el('p', 'work-note');
+      withTitles(note, `Slate could not place ${nameList(gone)}, so `
+        + `${gone.length > 1 ? 'they are' : 'it is'} not in the figure.`,
+        lineup());
+      figure.insertBefore(note, figure.firstChild);
     }
     status.textContent = '';
   } catch (e) {
@@ -879,7 +1000,7 @@ function fewerAsk(body) {
       out.appendChild(split);
       status.textContent = '';
     } catch (e) {
-      failure(e, out, () => go.onclick());
+      noted(out, e, () => failure(e, out, () => go.onclick()));
     } finally {
       go.disabled = false;
       go.textContent = 'Find the best set';
@@ -914,7 +1035,7 @@ function swapAsk(body) {
       paintSwap(out, d);
       status.textContent = '';
     } catch (e) {
-      failure(e, out, () => go.onclick());
+      noted(out, e, () => failure(e, out, () => go.onclick()));
     } finally {
       go.disabled = false;
       go.textContent = 'Look for a swap';
@@ -1198,7 +1319,7 @@ function standAsk(body) {
       paintStand(out, b);
       status.textContent = '';
     } catch (e) {
-      failure(e, out, () => go.onclick());
+      noted(out, e, () => failure(e, out, () => go.onclick()));
     } finally {
       go.disabled = false;
       go.textContent = 'Analyse';
@@ -1353,7 +1474,7 @@ function compareAsk(body) {
       paintChoose(out, got);
       status.textContent = '';
     } catch (e) {
-      failure(e, out, () => go.onclick());
+      noted(out, e, () => failure(e, out, () => go.onclick()));
     } finally {
       go.disabled = false;
       go.textContent = 'Analyse';
@@ -1364,6 +1485,7 @@ function compareAsk(body) {
 function paintChoose(out, got) {
   out.textContent = '';
   const best = got.best;
+  (got.notes || []).forEach((t) => out.appendChild(el('p', 'work-note', t)));
   out.appendChild(drawn(got.shape));
 
   const split = el('div', 'work-split ranked');
@@ -1409,14 +1531,6 @@ function paintChoose(out, got) {
     block(left, 'The next best set',
       `${nameList(got.next.films)}. Their two most alike titles sit closer `
       + 'together than in the set above.');
-  }
-
-  if ((got.unplaced || []).length) {
-    block(left, 'Could not be placed',
-      `${nameList(got.unplaced)}. Qloo has too little on `
-      + `${got.unplaced.length > 1 ? 'them' : 'it'} to say where `
-      + `${got.unplaced.length > 1 ? 'they sit' : 'it sits'} against your `
-      + 'lineup.');
   }
 
   const acts = el('div', 'row');
@@ -1488,6 +1602,50 @@ async function paperFor(kind, data) {
   });
   if (!res.ok) throw new Error('That document could not be made.');
   return { markup: await res.text(), body };
+}
+
+function confirmDelete(name) {
+  return new Promise((settle) => {
+    document.querySelectorAll('.ask-over').forEach((n) => n.remove());
+
+    const over = el('div', 'ask-over');
+    over.setAttribute('role', 'dialog');
+    over.setAttribute('aria-modal', 'true');
+
+    const box = el('div', 'ask-box');
+    box.appendChild(el('h3', 'ask-title', 'Delete this workspace?'));
+
+    const why = el('p', 'ask-said');
+    why.appendChild(el('i', null, name));
+    why.appendChild(document.createTextNode(
+      ' and its saved versions go with it. This cannot be undone.'));
+    box.appendChild(why);
+
+    const close = (yes) => {
+      over.remove();
+      document.body.classList.remove('held');
+      document.removeEventListener('keydown', onKey);
+      settle(yes);
+    };
+    const onKey = (ev) => { if (ev.key === 'Escape') close(false); };
+
+    const row = el('div', 'ask-acts');
+    const no = el('button', 'ghost', 'Cancel');
+    no.type = 'button';
+    no.onclick = () => close(false);
+    const yes = el('button', 'solid warn', 'Delete');
+    yes.type = 'button';
+    yes.onclick = () => close(true);
+    row.append(no, yes);
+    box.appendChild(row);
+
+    over.appendChild(box);
+    over.onclick = (ev) => { if (ev.target === over) close(false); };
+    document.body.appendChild(over);
+    document.body.classList.add('held');
+    document.addEventListener('keydown', onKey);
+    yes.focus();
+  });
 }
 
 function showPaper(kind, data) {

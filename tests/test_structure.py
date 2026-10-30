@@ -859,7 +859,8 @@ def test_every_example_set_resolves_to_one_type():
     import json
     folder = Path(__file__).resolve().parent.parent / "data" / "examples"
     sets = sorted(folder.glob("*.json"))
-    assert len(sets) == 5
+    assert len(sets) == 6
+    assert (folder / "sf-candidates.json").exists()
     for path in sets:
         d = json.loads(path.read_text(encoding="utf-8"))
         assert d["entity_type"].startswith("urn:entity:")
@@ -941,8 +942,10 @@ def test_a_lineup_that_does_not_separate_is_one_group():
 
 def test_the_weak_case_says_so_and_shows_nothing_else():
     js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
-    assert "are too alike to " in js
-    board = js[js.index("const spendBand"):js.index("const settle")]
+    assert "No clear separation under this analysis." in js
+    assert "are too alike to " not in js
+    at = js.index("const spendBand")
+    board = js[at:js.index("const settle", at)]
     assert "if (d.weak) { spend.textContent = ''; return; }" in board
     v = js[js.index("function verdict(d)"):js.index("function filmNode(")]
     assert "do not separate." in v
@@ -1964,7 +1967,17 @@ def test_the_readme_is_committed():
     assert (root / "README.md").exists()
     assert (root / "LICENSE").exists(), "an open source licence is required"
     ignore = (root / ".gitignore").read_text()
-    assert "!README.md" in ignore
+    assert "!README.md" not in ignore and "*.md" not in ignore
+
+
+def test_the_readme_points_at_things_that_exist():
+    root = Path(__file__).resolve().parent.parent
+    text = (root / "README.md").read_text()
+    assert "docs/figure.png" in text
+    import re
+    for name in re.findall(r"scripts/(probe_\w+\.py|warm_cache\.py)", text):
+        assert (root / "scripts" / name).exists(), name
+    assert text.rstrip().endswith("MIT. See [LICENSE](LICENSE).")
 
 
 def test_the_readme_claims_only_what_was_measured():
@@ -1973,8 +1986,8 @@ def test_the_readme_claims_only_what_was_measured():
     for claim in ("0.35", "0.24", "\u22120.650", "+0.251", "\u22120.498"):
         assert claim in flat, claim
     assert "Honest limits" in text
-    assert "could not answer" in flat, "the bridge test that failed"
     assert "not attendance" in flat
+    assert "inferences from taste adjacency" in flat
 
 
 def test_the_group_header_is_legible_on_the_panel():
@@ -2001,3 +2014,266 @@ def test_served_json_does_not_republish_qloo_values():
     src = (Path(__file__).resolve().parent.parent / "scripts"
            / "precompute.py").read_text()
     assert "def _without_qloo_values(shape: dict)" in src
+
+
+def test_the_baselines_are_measured_against_agreement():
+    import json
+    root = Path(__file__).resolve().parent.parent
+    src = (root / "scripts" / "probe_overlap.py").read_text()
+    assert 'm["baselines"]' not in src, "it would overwrite the right ones"
+
+    v = json.loads((root / "data" / "validation.json").read_text())
+    rows = {b["name"]: b["rho"] for b in v["movielens"].get("baselines", [])}
+    if not rows:
+        return
+    assert abs(rows["Slate distance"] - (-0.498)) < 0.01, rows
+    assert abs(rows["Years apart"]) < 0.3, (
+        "release year near Slate means these are overlap figures")
+
+
+def test_each_candidate_failure_gets_its_own_answer():
+    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    assert "def _candidate_notes(" in src
+    for line in ("already in this lineup.",
+                 "Slate could not find ",
+                 "but no data linking "):
+        assert line in src, line
+    assert "could not be placed against" not in src
+    assert "None of those titles could be placed" not in src
+    assert "Give some titles to choose between." not in src
+
+
+def test_the_compare_count_runs_after_filtering():
+    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    at = src.index("def choose(")
+    block = src[at:src.index("@app.post", at + 10)]
+    assert "if len(pool) < slots + 1:" in block
+    assert block.index("pool = [t for t in m.films") < block.index("slots + 1")
+
+
+def test_input_refusals_are_a_sentence_not_a_panel():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "function noted(out, err, fallback)" in js
+    assert js.count("noted(out, e,") >= 4, "every ask routes through it"
+    block = js[js.index("function noted("):js.index("function said(")]
+    assert "404" in block and "409" in block and "422" in block
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".work-note {" in css
+
+
+def test_the_notes_sit_above_the_figure():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    at = js.index("function paintChoose(out, got)")
+    block = js[at:js.index("\nfunction ", at + 10)]
+    assert "(got.notes || []).forEach" in block
+    assert block.index("got.notes") < block.index("drawn(got.shape)")
+    assert "Could not be placed" not in js, "it moved above the figure"
+
+
+def test_a_mixed_list_is_a_question_not_a_guess():
+    src = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    assert "class MixedTypes(Exception)" in src
+    block = src[src.index("def _read_as("):src.index("def _pipeline(")]
+    assert "raise MixedTypes" in block
+    assert "if len(by_kind) > 1:" in block
+
+    api = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    assert api.count("except MixedTypes as mix:") == 2, "panel and spaces"
+    assert '"mixed": True' in api
+
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "function mixedPanel(info, titles, onPick)" in js
+    assert "Slate creates one workspace per kind of title" in js
+    assert "err.body = body" in js, "the breakdown must survive the throw"
+
+
+def test_the_maximum_is_enforced_like_the_minimum():
+    api = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    assert api.count("titles at most.") == 2, "panel and spaces"
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "Twenty-four titles at most." in js
+
+
+def test_the_header_counts_what_was_analysed():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    at = js.index("function drawCounts()")
+    block = js[at:js.index("\nfunction ", at + 10)]
+    assert "shown ? shown.films.length" in block
+    assert "el('span', over > 0 ? 'over' : null, gap)" in block, (
+        "only the warning is red")
+
+
+def test_the_working_button_does_not_look_disabled():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "make.classList.add('busy')" in js
+    assert "make.disabled = true" not in js
+    assert "Asking Qloo about" in js
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert "@keyframes working" in css, "breathe drops to 0.2 and would vanish"
+
+
+def test_the_front_door_shares_a_gutter_with_the_cards():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    door = css[css.index(".door {"):css.index("}", css.index(".door {"))]
+    assert "max-width: 72rem" in door
+    assert "color: var(--muted); font-size: 1.125rem" in css, "the card dots"
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "bar.classList.add('bare')" in js
+    assert "bar.classList.remove('bare')" in js, "the workspace bar is full"
+    assert ".deskbar.bare { justify-content: center; }" in css
+
+
+def test_the_probe_lineup_stays_off_the_page():
+    root = Path(__file__).resolve().parent.parent
+    assert not (root / "data" / "lineups" / "bridge-probe.json").exists()
+    assert (root / "data" / "lineups" / "_probe-bridge.json").exists()
+    for name in ("probe_groups.py", "probe_bridge_audience.py"):
+        src = (root / "scripts" / name).read_text()
+        assert '"_probe-bridge"' in src, name
+        assert '"bridge-probe"' not in src, name
+
+
+def test_only_the_slot_warning_is_red():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".deskbar-counts .over { color: var(--warn); }" in css
+    assert ".deskbar-counts.over {" not in css, "it coloured the counts too"
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "counts.classList.toggle('over'" not in js
+
+
+def test_the_panel_reports_what_it_could_not_place():
+    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    assert '"panel", [], entity_type' not in src
+    assert src.count('"panel", lost, entity_type') == 2
+    assert 'lost: list[str] = []' in src, "a Qloo failure must not leave it unset"
+
+
+def test_the_year_hint_is_only_where_a_year_helps():
+    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    block = src[src.index("def _year_hint("):src.index("def _nameList(")]
+    assert "urn:entity:movie" in block and "urn:entity:tv_show" in block
+    assert "Monster (2023)" in block
+    assert "or try another title." in block
+
+
+def test_trailing_punctuation_does_not_echo_back():
+    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    ns = {}
+    at = src.index("def _tidy(")
+    exec(src[at:src.index("def _year_hint(")], ns)
+    assert ns["_tidy"]("Qqzrth Morning Report.") == "Qqzrth Morning Report"
+    assert ns["_tidy"]("  Monster, ") == "Monster"
+    assert ns["_tidy"]("...") == "..."
+
+
+def test_that_leaves_needs_something_taken_away():
+    src = (Path(__file__).resolve().parent.parent / "app" / "main.py").read_text()
+    assert 'if notes else ""' in src, "a clean list has nothing to leave"
+
+
+def test_a_refusal_on_the_front_door_is_visible():
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".door-said.refused {" in css
+    assert "color: var(--warn)" in css.split(".door-said.refused {")[1][:120]
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "said.classList.add('refused')" in js
+
+
+def test_the_mixed_panel_attributes_the_matching():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "`Matched as ${kind.label}" in js
+    assert "if (t.year) row.appendChild(el('span', 'year'" in js
+    build = (Path(__file__).resolve().parent.parent / "app" / "build.py").read_text()
+    assert '"year": getattr(got[title]' in build
+    assert "adding a year in brackets, like Monster (2023)" in js
+
+
+def test_the_outlier_leans_on_its_group():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    at = js.index("} else if (extra === 'apart') {")
+    block = js[at:js.index("}", js.index("role: 'apart'", at))]
+    assert "laneAt(last)" in block, "beside the last group, not past it"
+    assert "turn: -20" in block, "upper left down to lower right"
+    assert "card.h * 0.56" in block, "below the last card's midpoint"
+    assert "lanes = groups.length + (extra === 'span' ? 1 : 0)" in js, (
+        "no empty lane is reserved for it now")
+    assert "const lean = extra === 'apart'" in js, "room so it is not clipped"
+
+
+def test_the_card_counts_what_qloo_placed():
+    store = (Path(__file__).resolve().parent.parent / "app" / "store.py").read_text()
+    assert "ADD COLUMN IF NOT EXISTS placed" in store, "postgres"
+    assert "ADD COLUMN placed INTEGER" in store, "sqlite"
+    assert '"placed": r[8] if len(r) > 8 else None' in store, (
+        "rows made before the column must still read")
+    assert 'if "titles" in fields and "placed" not in fields' in store, (
+        "editing the lineup makes the count stale")
+
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "typeof w.placed === 'number'" in js
+    assert "w.placed : w.titles.length" in js, "fall back when unknown"
+    at = js.index("const fields = {};")
+    block = js[at:js.index("}\n", js.index("save(fields)", at))]
+    assert "fields.slots" in block and "fields.placed" in block
+
+
+def test_an_old_database_still_opens():
+    import json as _json, sqlite3 as _sql, tempfile, time as _t
+    import app.store as store
+    folder = Path(tempfile.mkdtemp())
+    db = folder / "old.db"
+    con = _sql.connect(db)
+    con.execute("CREATE TABLE workspaces (id TEXT PRIMARY KEY, owner TEXT "
+                "NOT NULL, name TEXT NOT NULL, entity_type TEXT NOT NULL, "
+                "slots INTEGER NOT NULL, titles TEXT NOT NULL, versions "
+                "TEXT NOT NULL, touched REAL NOT NULL)")
+    con.execute("INSERT INTO workspaces VALUES (?,?,?,?,?,?,?,?)",
+                ("old1", "someone", "Made earlier", "urn:entity:movie", 5,
+                 _json.dumps(list("ABCDE")), _json.dumps([]), _t.time()))
+    con.commit()
+    con.close()
+
+    was = store._SQLITE
+    try:
+        store._SQLITE = db
+        rows = store.listing("someone")
+        assert rows and rows[0]["placed"] is None
+        assert len(rows[0]["titles"]) == 5
+        store.update("someone", "old1", placed=4)
+        assert store.listing("someone")[0]["placed"] == 4
+        store._lite()
+    finally:
+        store._SQLITE = was
+
+
+def test_the_ignore_rules_match_the_project():
+    root = Path(__file__).resolve().parent.parent
+    rules = (root / ".gitignore").read_text()
+    assert "*.md" not in rules
+    for gone in ("slate_setup.sh", "apply.sh", "search_*.json"):
+        assert gone not in rules, gone
+    for needed in (".env", "data/cache/", "data/ml-32m/", "data/slate.db",
+                   "__pycache__/", ".venv/"):
+        assert needed in rules, needed
+
+
+def test_deleting_is_asked_in_slates_own_voice():
+    js = (Path(__file__).resolve().parent.parent / "static" / "work.js").read_text()
+    assert "window.confirm" not in js
+    assert "function confirmDelete(name)" in js
+    assert "await confirmDelete(w.name)" in js
+    block = js[js.index("function confirmDelete("):js.index("function showPaper(")]
+    assert "Escape" in block, "a dialog must be dismissable"
+    assert "aria-modal" in block
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".ask-acts .solid.warn { background: var(--warn); }" in css
+
+
+def test_the_size_bar_shows_which_group_is_largest():
+    js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text()
+    at = js.index("if (ui.sizes) {")
+    block = js[at:js.index("if (ui.taken) {", at)]
+    assert "const most = Math.max(1, ...counts);" in block
+    assert "0.4 + 0.6 * (n / most)" in block
+    css = (Path(__file__).resolve().parent.parent / "static" / "style.css").read_text()
+    assert ".sizes span:first-child" not in css, "size decides, not position"

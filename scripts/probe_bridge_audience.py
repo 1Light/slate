@@ -18,7 +18,7 @@ from app.resolve import resolve_all             # noqa: E402
 from app.structure import analyse               # noqa: E402
 
 ML = Path("data/ml-32m")
-LINEUPS = ["bridge-probe", "one-genre", "berlinale2024", "cannes2023",
+LINEUPS = ["_probe-bridge", "one-genre", "berlinale2024", "cannes2023",
            "sundance2024"]
 MIN_RATERS = 30
 

@@ -28,7 +28,7 @@ Then it marks two things:
 
 **Bridges.** A film close in taste to two different groups at once. It sits between them, so people drawn to one are more likely to find something in the other. Instead of needing a separate film for each group, one slot can reach both.
 
-**Outliers.** A film that covers an audience with a distinct taste from the rest of the lineup. It covers some of its group’s audience, and some that nothing else in the lineup covers.
+**Outliers.** A film that covers an audience with a distinct taste from the rest of the lineup. It covers some of its group's audience, and some that nothing else in the lineup covers.
 
 From the workspace, you can ask four things:
 
@@ -78,7 +78,7 @@ Qloo's rankings are a claim about taste. To see whether they describe how people
 
 **The distance behind them holds.** The further apart Slate places two films, the less their audiences overlap: −0.650 across 55 pairs. The films' own popularity scores +0.251. Hence, Slate is reading shared audience, not fame.
 
-**Metadata cannot do it.** Against the same data, Slate’s distance scored a correlation of −0.498 against how much viewers agreed. Shared genres manage +0.038, release year −0.139, popularity +0.060. This means Slate’s distance predicts agreement far better than metadata does.
+**Metadata cannot do it.** Against the same data, Slate's distance scored a correlation of −0.498 against how much viewers agreed. Shared genres manage +0.038, release year −0.139, popularity +0.060. This means Slate's distance predicts agreement far better than metadata does.
 
 **The groups survive the lineup changing.** Remove any one title and redo the whole analysis. The experiment gave adjusted Rand index scores of +0.97, +0.86, +0.76 and +0.74 across the four sample lineups.
 
@@ -167,4 +167,4 @@ tests/          the test suite
 
 ## Licence
 
-MIT. See `LICENSE`.
+MIT. See [LICENSE](LICENSE).

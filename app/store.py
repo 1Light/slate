@@ -48,6 +48,8 @@ def _pg():
                 )""")
             con.execute("CREATE INDEX IF NOT EXISTS workspaces_owner "
                         "ON workspaces (owner, touched DESC)")
+            con.execute("ALTER TABLE workspaces "
+                        "ADD COLUMN IF NOT EXISTS placed INTEGER")
         _PG = pool
         return pool
     except Exception:
@@ -71,6 +73,10 @@ def _lite():
         )""")
     con.execute("CREATE INDEX IF NOT EXISTS workspaces_owner "
                 "ON workspaces (owner, touched DESC)")
+    try:
+        con.execute("ALTER TABLE workspaces ADD COLUMN placed INTEGER")
+    except sqlite3.OperationalError:
+        pass
     con.commit()
     return con
 
@@ -100,6 +106,7 @@ def _row(r) -> dict:
         "id": r[0], "name": r[2], "entity_type": r[3], "slots": r[4],
         "titles": json.loads(r[5]), "versions": json.loads(r[6]),
         "touched": r[7],
+        "placed": r[8] if len(r) > 8 else None,
     }
 
 
@@ -147,11 +154,18 @@ def update(owner: str, wid: str, **fields) -> dict | None:
         row["slots"] = max(1, min(fields["slots"], 200))
     if "versions" in fields:
         row["versions"] = list(fields["versions"])[:MAX_VERSIONS]
+    if "placed" in fields:
+        got = fields["placed"]
+        row["placed"] = got if isinstance(got, int) and got >= 0 else None
+    if "titles" in fields and "placed" not in fields:
+        row["placed"] = None
     row["touched"] = time.time()
     _run("UPDATE workspaces SET name = %s, slots = %s, titles = %s, "
-         "versions = %s, touched = %s WHERE owner = %s AND id = %s",
+         "versions = %s, touched = %s, placed = %s "
+         "WHERE owner = %s AND id = %s",
          (row["name"], row["slots"], json.dumps(row["titles"]),
-          json.dumps(row["versions"]), row["touched"], owner, wid))
+          json.dumps(row["versions"]), row["touched"], row["placed"],
+          owner, wid))
     return row
 
 
