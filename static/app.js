@@ -393,6 +393,7 @@ function board(d, ui) {
       const one = el('div', 'link');
       const f = byTitle[b.film];
       const name = el('p', 'link-name');
+      name.dataset.title = b.film;
       name.appendChild(document.createTextNode(b.film));
       if (f && f.year) name.appendChild(el('span', 'year', String(f.year)));
       one.appendChild(name);
@@ -402,6 +403,7 @@ function board(d, ui) {
       rows.appendChild(one);
     });
     ui.links.appendChild(rows);
+    if (window.afterLinks) window.afterLinks(ui.links);
   };
 
   const settle = () => {

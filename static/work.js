@@ -1787,6 +1787,44 @@ function drawFeet() {
   feet.appendChild(flip);
 }
 
+window.afterLinks = (where) => markLocks(where);
+
+function markLocks(where) {
+  const held = new Set(locked());
+  if (!held.size) return;
+  where.querySelectorAll('[data-title]').forEach((row) => {
+    if (!held.has(row.dataset.title)) return;
+    row.classList.add('held');
+    const mark = el('span', 'film-lock');
+    mark.innerHTML = LOCK_SHUT;
+    mark.tabIndex = 0;
+    mark.setAttribute('role', 'img');
+    mark.setAttribute('aria-label', 'Locked — Slate must keep this title.');
+    const hint = el('span', 'film-lock-tip',
+      'Locked — Slate must keep this title.');
+    hint.setAttribute('aria-hidden', 'true');
+    const placeHint = () => {
+      document.querySelectorAll('.film-lock-tip').forEach((n) => n.remove());
+      document.body.appendChild(hint);
+      const rect = mark.getBoundingClientRect();
+      hint.style.left = `${Math.max(8, Math.min(rect.left,
+        window.innerWidth - hint.offsetWidth - 8))}px`;
+      hint.style.top = `${Math.max(8, rect.bottom + hint.offsetHeight + 8
+        > window.innerHeight ? rect.top - hint.offsetHeight - 8
+        : rect.bottom + 8)}px`;
+    };
+    mark.onmouseenter = placeHint;
+    mark.onfocus = placeHint;
+    mark.onmouseleave = () => {
+      if (document.activeElement !== mark) hint.remove();
+    };
+    mark.onblur = () => {
+      if (!mark.matches(':hover')) hint.remove();
+    };
+    row.insertBefore(mark, row.firstChild);
+  });
+}
+
 function drawn(d) {
   d.locked = locked();
   const sec = chapter(d, null);
@@ -1795,40 +1833,7 @@ function drawn(d) {
     const gone = sec.querySelector(sel);
     if (gone) gone.remove();
   });
-  const held = new Set(locked());
-  if (held.size) {
-    sec.querySelectorAll('.film[data-title]').forEach((row) => {
-      if (!held.has(row.dataset.title)) return;
-      row.classList.add('held');
-      const mark = el('span', 'film-lock');
-      mark.innerHTML = LOCK_SHUT;
-      mark.tabIndex = 0;
-      mark.setAttribute('role', 'img');
-      mark.setAttribute('aria-label', 'Locked — Slate must keep this title.');
-      const hint = el('span', 'film-lock-tip',
-        'Locked — Slate must keep this title.');
-      hint.setAttribute('aria-hidden', 'true');
-      const placeHint = () => {
-        document.querySelectorAll('.film-lock-tip').forEach((n) => n.remove());
-        document.body.appendChild(hint);
-        const rect = mark.getBoundingClientRect();
-        hint.style.left = `${Math.max(8, Math.min(rect.left,
-          window.innerWidth - hint.offsetWidth - 8))}px`;
-        hint.style.top = `${Math.max(8, rect.bottom + hint.offsetHeight + 8
-          > window.innerHeight ? rect.top - hint.offsetHeight - 8
-          : rect.bottom + 8)}px`;
-      };
-      mark.onmouseenter = placeHint;
-      mark.onfocus = placeHint;
-      mark.onmouseleave = () => {
-        if (document.activeElement !== mark) hint.remove();
-      };
-      mark.onblur = () => {
-        if (!mark.matches(':hover')) hint.remove();
-      };
-      row.insertBefore(mark, row.firstChild);
-    });
-  }
+  markLocks(sec);
   return sec;
 }
 

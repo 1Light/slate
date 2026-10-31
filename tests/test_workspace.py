@@ -725,3 +725,32 @@ def test_the_card_menu_is_drawn_not_typed():
     head = css[css.index(".door-card-head {"):]
     head = head[:head.index("}")]
     assert "align-items: center" in head
+
+
+def test_a_locked_title_is_marked_wherever_the_figure_draws_it():
+    """Bridges are drawn as .link-name, not .film, so a selector tied to
+    .film found the group columns and nothing else."""
+    here = Path(__file__).resolve().parent.parent
+    work = (here / "static" / "work.js").read_text()
+    assert "function markLocks(where)" in work, (
+        "marking must be callable again when a band rebuilds")
+    at = work.index("function markLocks(where)")
+    marking = work[at:work.index("\nfunction ", at + 10)]
+    assert "where.querySelectorAll('[data-title]')" in marking, (
+        "the selector must not be tied to one class")
+    assert ".film[data-title]" not in marking
+    assert "window.afterLinks" in work, (
+        "the links band is rebuilt after the first pass, which wiped the mark")
+
+    assert "window.afterLinks(ui.links)" in (
+        ROOT_APP := (here / "static" / "app.js").read_text())
+
+    app = (here / "static" / "app.js").read_text()
+    bridge = app[app.index("const name = el('p', 'link-name');"):]
+    bridge = bridge[:bridge.index("one.appendChild(name)")]
+    assert "name.dataset.title = b.film;" in bridge, (
+        "a bridge row must carry its title")
+
+    columns = app[app.index("c.films.slice().sort().forEach"):]
+    columns = columns[:columns.index("cols.appendChild(col)")]
+    assert "row.dataset.title = t;" in columns
