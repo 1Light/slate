@@ -246,7 +246,7 @@ With the virtual environment active, run the full suite from the project directo
 python3 -m pytest
 ```
 
-The suite currently contains **322 tests**, organised by responsibility. It includes engine checks, audience selection and parsing, workspace persistence, and assertions about the interface and documentation. It runs without Qloo or DeepSeek API keys.
+The suite currently contains **323 tests**, organised by responsibility. It includes engine checks, audience selection and parsing, workspace persistence, and assertions about the interface and documentation. It runs without Qloo or DeepSeek API keys.
 
 To run one area:
 
